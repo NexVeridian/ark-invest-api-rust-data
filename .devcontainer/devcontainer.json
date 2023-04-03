@@ -1,0 +1,68 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/rust
+// https://containers.dev/implementors/json_reference/#variables-in-devcontainerjson
+{
+	"name": "Rust",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	// "image": "mcr.microsoft.com/devcontainers/rust:0-1-bullseye",
+	"build": {
+		// Path is relataive to the devcontainer.json file.
+		"dockerfile": "Dockerfile"
+	},
+	// https://github.com/microsoft/vscode-remote-release/issues/2485#issuecomment-1156342780
+	"runArgs": [
+		"--name",
+		"devcontainer-${containerWorkspaceFolderBasename}"
+	],
+	"initializeCommand": "docker rm -f devcontainer-${containerWorkspaceFolderBasename} || true",
+	// Use 'mounts' to make the cargo cache persistent in a Docker Volume.
+	"mounts": [
+		{
+			// "source": "devcontainer-cargo-cache-${devcontainerId}",
+			"source": "devcontainer-cargo-cache-${containerWorkspaceFolderBasename}",
+			"target": "/usr/local/cargo",
+			"type": "volume"
+		}
+	],
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {}
+		// "ghcr.io/devcontainers/features/nix:1": {
+		// 	"packages": [
+		// 		"btop"
+		// 		// "lazygit"
+		// 	]
+		// }
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": {
+	// },
+	"postAttachCommand": {
+		"AddGitSafeDir": "git config --global --add safe.directory /workspaces/${containerWorkspaceFolderBasename}",
+		"clippy": "cargo clippy"
+	},
+	// Configure tool-specific properties.
+	// "customizations": {},
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "root",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"vadimcn.vscode-lldb",
+				"serayuzgur.crates",
+				"bungcip.better-toml",
+				"rust-lang.rust-analyzer",
+				"mutantdino.resourcemonitor",
+				"christian-kohler.path-intellisense",
+				"Swellaby.vscode-rust-test-adapter",
+				"Gruntfuggly.todo-tree",
+				"ms-azuretools.vscode-docker",
+				"redhat.vscode-yaml",
+				"tomoki1207.pdf",
+				"GitHub.copilot"
+			]
+		}
+	}
+}

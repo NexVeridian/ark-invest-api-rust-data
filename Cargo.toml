@@ -1,0 +1,19 @@
+[package]
+name = "ark-invest-api-rust-data"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+polars = { version = "0.28", features = [
+	"lazy",
+	"strings",
+	"parquet",
+	"round_series",
+] }
+reqwest = { version = "0.11", features = ["blocking"] }
+glob = { version = "0.3" }
+clokwerk = "0.4.0"
+strum_macros = "0.24"
+strum = "0.24"
+tokio = { version = "1.26", features = ["full"] }
+openssl = { version = "0.10", features = ["vendored"] }

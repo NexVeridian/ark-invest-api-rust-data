@@ -1,0 +1,17 @@
+version: "3"
+services:
+    ark-invest-api-rust-data:
+        # image: ghcr.io/NexVeridian/ark-invest-api-rust-data:latest 
+        image: ark-invest-api-rust-data
+        build:
+            context: .
+            args:
+                DOCKER_BUILDKIT: 1
+        container_name: ark-invest-api-rust-data
+        restart: unless-stopped
+        volumes:
+            - ./data:/ark-invest-api-rust-data/data
+
+volumes:
+    data:
+    Data:
