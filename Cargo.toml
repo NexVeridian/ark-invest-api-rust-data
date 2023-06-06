@@ -9,6 +9,7 @@ polars = { version = "0.28", features = [
 	"strings",
 	"parquet",
 	"round_series",
+	"lazy_regex",
 ] }
 reqwest = { version = "0.11", features = ["blocking"] }
 glob = { version = "0.3" }

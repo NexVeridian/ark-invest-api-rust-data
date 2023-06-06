@@ -38,7 +38,7 @@ impl Ticker {
 pub fn merge_csv_to_parquet(folder: Ticker) -> Result<(), Box<dyn Error>> {
     let mut dfs = vec![];
 
-    for x in glob(&format!("data/csv/{}/*", folder.to_string()))?.filter_map(Result::ok) {
+    for x in glob(&format!("data/csv/{}/*", folder))?.filter_map(Result::ok) {
         dfs.push(LazyCsvReader::new(x).finish()?);
     }
 
@@ -61,24 +61,21 @@ pub fn update_parquet(ticker: Ticker) -> Result<(), Box<dyn Error>> {
 
 pub fn read_parquet(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
     let df = LazyFrame::scan_parquet(
-        format!("data/parquet/{}.parquet", ticker.to_string()),
+        format!("data/parquet/{}.parquet", ticker),
         ScanArgsParquet::default(),
     )?;
     Ok(df)
 }
 
 pub fn write_parquet(ticker: Ticker, mut df: DataFrame) -> Result<(), Box<dyn Error>> {
-    ParquetWriter::new(File::create(format!(
-        "data/parquet/{}.parquet",
-        ticker.to_string()
-    ))?)
-    .finish(&mut df)?;
+    ParquetWriter::new(File::create(format!("data/parquet/{}.parquet", ticker))?)
+        .finish(&mut df)?;
 
     Ok(())
 }
 
-pub fn df_format(folder: Ticker, mut dfl: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
-    match folder {
+pub fn df_format(ticker: Ticker, mut dfl: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
+    match ticker {
         Ticker::ARKVC => {
             dfl = dfl.rename(vec!["CUSIP", "weight (%)"], vec!["cusip", "weight"]);
 
@@ -105,26 +102,95 @@ pub fn df_format(folder: Ticker, mut dfl: LazyFrame) -> Result<DataFrame, Box<dy
         }
         _ => {
             let mut df = dfl.collect()?;
+            let col_names = df.get_column_names();
 
-            if let Ok(_) = df.rename("market_value_($)", "market_value") {}
-            if let Ok(_) = df.rename("weight_(%)", "weight") {}
-
-            if let Ok(x) = df
-                .clone()
-                .lazy()
-                .with_column(col("date").cast(DataType::Date))
-                .filter(col("date").is_not_null())
-                .collect()
-            {
-                df = x
-            } else if let Ok(x) = df
-                .clone()
-                .lazy()
-                .filter(col("date").is_not_null())
-                .collect()
-            {
-                df = x
+            if df.rename("market_value_($)", "market_value").is_ok() {}
+            if df.rename("market value ($)", "market_value").is_ok() {}
+            if df.rename("weight_(%)", "weight").is_ok() {}
+            if df.rename("weight (%)", "weight").is_ok() {}
+            if df.get_column_names().contains(&"fund") {
+                _ = df.drop_in_place("fund");
             }
+            if df.get_column_names().contains(&"weight_rank") {
+                _ = df.drop_in_place("weight_rank");
+            }
+
+            let mut expressions: Vec<Expr> = vec![];
+
+            if !df.fields().contains(&Field::new("date", DataType::Date)) {
+                expressions.push(col("date").str().strptime(StrpTimeOptions {
+                    date_dtype: DataType::Date,
+                    fmt: Some("%m/%d/%Y".into()),
+                    strict: false,
+                    exact: true,
+                    cache: false,
+                    tz_aware: false,
+                    utc: false,
+                }));
+            }
+
+            if df.fields().contains(&Field::new("weight", DataType::Utf8)) {
+                expressions.push(
+                    col("weight")
+                        .str()
+                        .replace(lit("%"), lit(""), true)
+                        .cast(DataType::Float64),
+                );
+            }
+
+            if df
+                .fields()
+                .contains(&Field::new("market_value", DataType::Utf8))
+            {
+                expressions.push(
+                    col("market_value")
+                        .str()
+                        .replace(lit("$"), lit(""), true)
+                        .str()
+                        .replace_all(lit(","), lit(""), true)
+                        .cast(DataType::Float64)
+                        .cast(DataType::Int64),
+                );
+            }
+
+            if df.fields().contains(&Field::new("shares", DataType::Utf8)) {
+                expressions.push(
+                    col("shares")
+                        .str()
+                        .replace_all(lit(","), lit(""), true)
+                        .cast(DataType::Int64),
+                );
+            }
+
+            df = df
+                .lazy()
+                .with_columns(expressions)
+                .filter(col("date").is_not_null())
+                .collect()?;
+
+            if !df.get_column_names().contains(&"share_price") {
+                df = df
+                    .lazy()
+                    .with_column(
+                        (col("market_value").cast(DataType::Float64)
+                            / col("shares").cast(DataType::Float64))
+                        .alias("share_price")
+                        .cast(DataType::Float64)
+                        .round(2),
+                    )
+                    .collect()?;
+            }
+
+            df = df.select([
+                "date",
+                "ticker",
+                "cusip",
+                "company",
+                "market_value",
+                "shares",
+                "share_price",
+                "weight",
+            ])?;
 
             Ok(df)
         }
@@ -132,22 +198,32 @@ pub fn df_format(folder: Ticker, mut dfl: LazyFrame) -> Result<DataFrame, Box<dy
 }
 
 pub fn get_csv(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
-    let data: Vec<u8>;
-    let request;
-    match ticker {
+    let url = match ticker {
         Ticker::ARKVC => {
-            request = Client::new()
-					.get("https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv")
+            "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned()
         }
         _ => {
-            request = Client::new().get(format!(
+            format!(
                 "https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv",
                 ticker.value(),
-                ticker.to_string()
-            ))
+                ticker
+            )
         }
+    };
+
+    let response = Client::builder()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+        .build()?.get(url).send()?;
+
+    if !response.status().is_success() {
+        return Err(format!(
+            "HTTP request failed with status code: {:?}",
+            response.status()
+        )
+        .into());
     }
-    data = request.send()?.text()?.bytes().collect();
+
+    let data: Vec<u8> = response.text()?.bytes().collect();
 
     let df = CsvReader::new(Cursor::new(data))
         .has_header(true)

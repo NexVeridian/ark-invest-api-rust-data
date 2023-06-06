@@ -14,7 +14,6 @@
 		"--name",
 		"devcontainer-${containerWorkspaceFolderBasename}"
 	],
-	"initializeCommand": "docker rm -f devcontainer-${containerWorkspaceFolderBasename} || true",
 	// Use 'mounts' to make the cargo cache persistent in a Docker Volume.
 	"mounts": [
 		{
@@ -29,8 +28,8 @@
 		"ghcr.io/devcontainers/features/git:1": {}
 		// "ghcr.io/devcontainers/features/nix:1": {
 		// 	"packages": [
-		// 		"btop"
-		// 		// "lazygit"
+		// 		"btop",
+		// 		"lazygit"
 		// 	]
 		// }
 	},
@@ -41,7 +40,8 @@
 	// },
 	"postAttachCommand": {
 		"AddGitSafeDir": "git config --global --add safe.directory /workspaces/${containerWorkspaceFolderBasename}",
-		"clippy": "cargo clippy"
+		"cargo_update": "cargo update",
+		"clippy": "cargo clippy --fix --allow-dirty"
 	},
 	// Configure tool-specific properties.
 	// "customizations": {},

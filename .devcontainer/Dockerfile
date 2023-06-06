@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/devcontainers/rust:bullseye
 
 RUN rustup target add x86_64-unknown-linux-musl && \
 	apt-get update && \
-	apt install -y build-essential xz-utils musl-tools musl-dev gcc-multilib && \
+	apt install -y build-essential xz-utils musl-tools musl-dev gcc-multilib pkg-config libssl-dev && \
 	rustup update
 
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+') && \
