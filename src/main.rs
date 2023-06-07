@@ -8,7 +8,6 @@
 
 mod util;
 use util::*;
-
 // #[tokio::main]
 // async fn main() {
 //     let mut scheduler = AsyncScheduler::new();
@@ -38,13 +37,13 @@ use util::*;
 // }
 
 fn main() {
-    let dfn = df_format(Ticker::ARKF, read_parquet(Ticker::ARKF).unwrap()).unwrap();
+    let dfn = df_format(read_parquet(Ticker::ARKVC).unwrap()).unwrap();
     println!("{:#?}", dfn);
 
-    // update_parquet(Ticker::ARKF).unwrap();
-    let update = df_format(Ticker::ARKF, get_csv(Ticker::ARKF).unwrap()).unwrap();
+    // update_parquet(Ticker::ARKVC).unwrap();
+    // let update = df_format(Ticker::ARKF, get_csv(Ticker::ARKF).unwrap()).unwrap();
     // let update = get_csv(Ticker::ARKF).unwrap().collect().unwrap();
 
-    // let x = read_parquet(Ticker::ARKF).unwrap().collect().unwrap();
-    println!("{:#?}", update);
+    // let x = df_format(read_parquet(Ticker::ARKVC).unwrap()).unwrap();
+    // println!("{:#?}", x);
 }
