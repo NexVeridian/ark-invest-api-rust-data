@@ -36,13 +36,6 @@ impl Ticker {
     }
 }
 
-#[derive(Clone, Copy)]
-pub enum Source {
-    Ark,
-    ApiIncremental,
-    ApiFull,
-}
-
 pub fn merge_csv_to_parquet(ticker: Ticker) -> Result<(), Box<dyn Error>> {
     let mut dfs = vec![];
     for x in glob(&format!("data/csv/{}/*", ticker))?.filter_map(Result::ok) {
@@ -59,6 +52,12 @@ pub fn merge_csv_to_parquet(ticker: Ticker) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+pub enum Source {
+    Ark,
+    ApiIncremental,
+    ApiFull,
 }
 
 pub fn update_parquet(ticker: Ticker, source: Source) -> Result<(), Box<dyn Error>> {
@@ -249,26 +248,7 @@ pub fn get_api(ticker: Ticker, last_day: Option<i32>) -> Result<LazyFrame, Box<d
             format!("https://api.nexveridian.com/ark_holdings?ticker={}", ticker)
         }
     };
-    let response = Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
-        .build()?.get(url).send()?;
-
-    if !response.status().is_success() {
-        return Err(format!(
-            "HTTP request failed with status code: {:?}",
-            response.status()
-        )
-        .into());
-    }
-    let data = response.text()?.into_bytes();
-
-    let json_string = String::from_utf8(data)?;
-    let json: Value = serde_json::from_str(&json_string)?;
-    let df = JsonReader::new(Cursor::new(json.to_string()))
-        .finish()?
-        .lazy();
-
-    Ok(df)
+    get_data_url(url, Reader::Json)
 }
 
 pub fn get_csv_ark(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
@@ -276,7 +256,15 @@ pub fn get_csv_ark(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
         Ticker::ARKVC => "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned(),
         _ => format!("https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", ticker.value(), ticker),
     };
+    get_data_url(url, Reader::Csv)
+}
 
+pub enum Reader {
+    Csv,
+    Json,
+}
+
+pub fn get_data_url(url: String, reader: Reader) -> Result<LazyFrame, Box<dyn Error>> {
     let response = Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
         .build()?.get(url).send()?;
@@ -291,10 +279,19 @@ pub fn get_csv_ark(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
 
     let data = response.text()?.into_bytes();
 
-    let df = CsvReader::new(Cursor::new(data))
-        .has_header(true)
-        .finish()?
-        .lazy();
+    let df = match reader {
+        Reader::Csv => CsvReader::new(Cursor::new(data))
+            .has_header(true)
+            .finish()?
+            .lazy(),
+        Reader::Json => {
+            let json_string = String::from_utf8(data)?;
+            let json: Value = serde_json::from_str(&json_string)?;
+            JsonReader::new(Cursor::new(json.to_string()))
+                .finish()?
+                .lazy()
+        }
+    };
 
     Ok(df)
 }
