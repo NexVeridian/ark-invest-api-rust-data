@@ -40,10 +40,14 @@ fn main() {
     let dfn = df_format(read_parquet(Ticker::ARKVC).unwrap()).unwrap();
     println!("{:#?}", dfn);
 
-    // update_parquet(Ticker::ARKVC).unwrap();
-    // let update = df_format(Ticker::ARKF, get_csv(Ticker::ARKF).unwrap()).unwrap();
-    // let update = get_csv(Ticker::ARKF).unwrap().collect().unwrap();
+    // let update = df_format(get_csv(Ticker::ARKF).unwrap()).unwrap();
+    // println!("{:#?}", update);
 
+    // update_parquet(Ticker::ARKVC).unwrap();
+    // let x = df_format(read_parquet(Ticker::ARKVC).unwrap()).unwrap();
+    // println!("{:#?}", x);
+
+    // merge_csv_to_parquet(Ticker::ARKVC).unwrap();
     // let x = df_format(read_parquet(Ticker::ARKVC).unwrap()).unwrap();
     // println!("{:#?}", x);
 }

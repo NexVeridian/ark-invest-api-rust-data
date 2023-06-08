@@ -1,8 +1,7 @@
 use glob::glob;
 use polars::datatypes::DataType;
-use polars::lazy::dsl::StrpTimeOptions;
 use polars::prelude::*;
-use polars::prelude::{DataFrame, UniqueKeepStrategy};
+use polars::prelude::{DataFrame, StrptimeOptions, UniqueKeepStrategy};
 use reqwest::blocking::Client;
 use std::error::Error;
 use std::fs::File;
@@ -35,16 +34,28 @@ impl Ticker {
     }
 }
 
-pub fn merge_csv_to_parquet(folder: Ticker) -> Result<(), Box<dyn Error>> {
+pub fn merge_csv_to_parquet(ticker: Ticker) -> Result<(), Box<dyn Error>> {
     let mut dfs = vec![];
 
-    for x in glob(&format!("data/csv/{}/*", folder))?.filter_map(Result::ok) {
+    for x in glob(&format!("data/csv/{}/*", ticker))?.filter_map(Result::ok) {
         dfs.push(LazyCsvReader::new(x).finish()?);
     }
 
-    let df = concat(dfs, false, true)?;
+    let mut df = concat(dfs, false, true)?;
 
-    write_parquet(folder, df_format(df)?)?;
+    if read_parquet(ticker).is_ok() {
+        let df_old = read_parquet(ticker)?;
+        df = concat(
+            vec![df_format(df_old)?.lazy(), df_format(df)?.lazy()],
+            false,
+            true,
+        )?
+        .unique_stable(None, UniqueKeepStrategy::First);
+        write_parquet(ticker, df_sort(df.collect()?)?)?;
+    } else {
+        write_parquet(ticker, df_format(df)?)?;
+    }
+
     Ok(())
 }
 
@@ -60,7 +71,7 @@ pub fn update_parquet(ticker: Ticker) -> Result<(), Box<dyn Error>> {
     )?
     .unique_stable(None, UniqueKeepStrategy::First);
 
-    write_parquet(ticker, df.collect()?)?;
+    write_parquet(ticker, df_sort(df.collect()?)?)?;
     Ok(())
 }
 
@@ -79,6 +90,10 @@ pub fn write_parquet(ticker: Ticker, mut df: DataFrame) -> Result<(), Box<dyn Er
     Ok(())
 }
 
+pub fn df_sort(df: DataFrame) -> Result<DataFrame, Box<dyn Error>> {
+    Ok(df.sort(["date", "weight"], vec![false, true])?)
+}
+
 pub fn df_format(df: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
     let mut df = df.collect()?;
 
@@ -86,8 +101,8 @@ pub fn df_format(df: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
         df = df
             .lazy()
             .rename(
-                vec!["market_value_($), weight_(%)"],
-                vec!["market_value, weight"],
+                vec!["market_value_($)", "weight_(%)"],
+                vec!["market_value", "weight"],
             )
             .collect()?;
     }
@@ -95,8 +110,8 @@ pub fn df_format(df: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
         df = df
             .lazy()
             .rename(
-                vec!["market value ($), weight (%)"],
-                vec!["market_value, weight"],
+                vec!["market value ($)", "weight (%)"],
+                vec!["market_value", "weight"],
             )
             .collect()?;
     }
@@ -123,15 +138,15 @@ pub fn df_format(df: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
     let mut expressions: Vec<Expr> = vec![];
 
     if !df.fields().contains(&Field::new("date", DataType::Date)) {
-        expressions.push(col("date").str().strptime(StrpTimeOptions {
-            date_dtype: DataType::Date,
-            fmt: Some("%m/%d/%Y".into()),
-            strict: false,
-            exact: true,
-            cache: false,
-            tz_aware: false,
-            utc: false,
-        }));
+        expressions.push(col("date").str().strptime(
+            DataType::Date,
+            StrptimeOptions {
+                format: Some("%m/%d/%Y".into()),
+                strict: false,
+                exact: true,
+                cache: false,
+            },
+        ));
     }
 
     if df.fields().contains(&Field::new("weight", DataType::Utf8)) {
@@ -208,16 +223,8 @@ pub fn df_format(df: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
 
 pub fn get_csv(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
     let url = match ticker {
-        Ticker::ARKVC => {
-            "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned()
-        }
-        _ => {
-            format!(
-                "https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv",
-                ticker.value(),
-                ticker
-            )
-        }
+        Ticker::ARKVC => "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned(),
+        _ => format!("https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", ticker.value(), ticker),
     };
 
     let response = Client::builder()
@@ -232,7 +239,7 @@ pub fn get_csv(ticker: Ticker) -> Result<LazyFrame, Box<dyn Error>> {
         .into());
     }
 
-    let data: Vec<u8> = response.text()?.bytes().collect();
+    let data = response.text()?.into_bytes();
 
     let df = CsvReader::new(Cursor::new(data))
         .has_header(true)
