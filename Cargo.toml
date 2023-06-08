@@ -10,6 +10,9 @@ polars = { version = "0.30", features = [
 	"parquet",
 	"round_series",
 	"lazy_regex",
+	"json",
+	"object",
+	"dtype-struct",
 ] }
 reqwest = { version = "0.11", features = ["blocking"] }
 glob = { version = "0.3" }
@@ -18,3 +21,5 @@ strum_macros = "0.24"
 strum = "0.24"
 tokio = { version = "1.26", features = ["full"] }
 openssl = { version = "0.10", features = ["vendored"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde_json = "1.0"
