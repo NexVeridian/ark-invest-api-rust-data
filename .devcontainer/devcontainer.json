@@ -14,6 +14,7 @@
 		"--name",
 		"devcontainer-${containerWorkspaceFolderBasename}"
 	],
+	"initializeCommand": "docker rm -f devcontainer-${containerWorkspaceFolderBasename} || true",
 	// Use 'mounts' to make the cargo cache persistent in a Docker Volume.
 	"mounts": [
 		{
@@ -60,7 +61,6 @@
 				"Gruntfuggly.todo-tree",
 				"ms-azuretools.vscode-docker",
 				"redhat.vscode-yaml",
-				"tomoki1207.pdf",
 				"GitHub.copilot"
 			]
 		}

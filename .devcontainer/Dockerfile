@@ -15,3 +15,6 @@ RUN BTOP_VERSION=$(curl -s "https://api.github.com/repos/aristocratos/btop/relea
 	sudo tar -xvf btop-x86_64-linux-musl.tbz && \
 	cd btop && ./install.sh && cd .. && \
 	rm -rf btop-x86_64-linux-musl.tbz btop
+
+RUN curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+# cargo install cargo-nextest --locked
