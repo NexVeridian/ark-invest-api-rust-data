@@ -37,10 +37,16 @@ use util::*;
 // }
 
 fn main() {
-    let dfn = df_format(read_parquet(Ticker::ARKK).unwrap()).unwrap();
-    println!("{:#?}", dfn);
+    let read = Ark::new(Source::Read, Ticker::ARKK)
+        .unwrap()
+        .collect()
+        .unwrap();
+    println!("{:#?}", read);
 
-    let api = df_format(get_api(Ticker::ARKK, None).unwrap()).unwrap();
+    let api = Ark::new(Source::ApiFull, Ticker::ARKK)
+        .unwrap()
+        .collect()
+        .unwrap();
     println!("{:#?}", api);
 
     // let update = df_format(get_csv_ark(Ticker::ARKK).unwrap()).unwrap();
