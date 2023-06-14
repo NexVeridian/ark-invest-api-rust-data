@@ -115,8 +115,7 @@ impl Ark {
             ark.df = Self::concat_df(vec![
                 Self::df_format(ark.df)?,
                 Self::df_format(update.into())?,
-            ])?
-            .into();
+            ])?;
         }
         Ok(ark)
     }
@@ -159,7 +158,7 @@ impl Ark {
     fn concat_df(dfs: Vec<DF>) -> Result<DF, Box<dyn Error>> {
         // with dedupe
         let df = concat(dfs.lazy(), false, true)?;
-        Ok(Self::dedupe(df.into())?)
+        Self::dedupe(df.into())
     }
 
     pub fn dedupe(mut df: DF) -> Result<DF, Box<dyn Error>> {
@@ -171,11 +170,11 @@ impl Ark {
     }
 
     pub fn format(&mut self) -> Result<&Self, Box<dyn Error>> {
-        self.df = Self::df_format(self.df.clone())?.into();
+        self.df = Self::df_format(self.df.clone())?;
         Ok(self)
     }
 
-    fn df_format(mut df: DF) -> Result<DF, Box<dyn Error>> {
+    fn df_format(df: DF) -> Result<DF, Box<dyn Error>> {
         let mut df = df.collect()?;
 
         if df.get_column_names().contains(&"market_value_($)") {
@@ -222,8 +221,7 @@ impl Ark {
             expressions.push(col("date").str().strptime(
                 DataType::Date,
                 StrptimeOptions {
-                    // format: Some("%m/%d/%Y".into()),
-                    format: None,
+                    format: Some("%m/%d/%Y".into()),
                     strict: false,
                     exact: true,
                     cache: true,
@@ -307,23 +305,18 @@ impl Ark {
     }
 
     pub fn get_api(&self, last_day: Option<NaiveDate>) -> Result<LazyFrame, Box<dyn Error>> {
-        let tic: Ticker = self.ticker;
-        let url = match (tic, last_day) {
+        let url = match (self.ticker, last_day) {
             (self::Ticker::ARKVC, Some(last_day)) => format!(
                 "https://api.nexveridian.com/arkvc_holdings?end={}",
                 last_day
             ),
             (tic, Some(last_day)) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker={}&end={}",
-                tic.value(),
-                last_day
+                tic, last_day
             ),
             (self::Ticker::ARKVC, None) => "https://api.nexveridian.com/arkvc_holdings".to_owned(),
             (tic, None) => {
-                format!(
-                    "https://api.nexveridian.com/ark_holdings?ticker={}",
-                    tic.value()
-                )
+                format!("https://api.nexveridian.com/ark_holdings?ticker={}", tic)
             }
         };
         Reader::Json.get_data_url(url)

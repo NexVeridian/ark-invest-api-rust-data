@@ -49,14 +49,15 @@ fn main() {
         .unwrap();
     println!("{:#?}", api);
 
-    // let update = df_format(get_csv_ark(Ticker::ARKK).unwrap()).unwrap();
-    // println!("{:#?}", update);
+    // let ark = Ark::new(Source::Ark, Ticker::ARKK)
+    //     .unwrap()
+    //     .collect()
+    //     .unwrap();
+    // println!("{:#?}", ark);
 
-    // update_parquet(Ticker::ARKK).unwrap();
-    // let x = df_format(read_parquet(Ticker::ARKK).unwrap()).unwrap();
-    // println!("{:#?}", x);
-
-    // merge_csv_to_parquet(Ticker::ARKVC).unwrap();
-    // let x = df_format(read_parquet(Ticker::ARKVC).unwrap()).unwrap();
-    // println!("{:#?}", x);
+    // let ark = Ark::new(Source::Ark, Ticker::ARKVC)
+    //     .unwrap()
+    //     .collect()
+    //     .unwrap();
+    // println!("{:#?}", ark);
 }
