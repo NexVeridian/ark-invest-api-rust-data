@@ -41,7 +41,7 @@
 	// },
 	"postAttachCommand": {
 		"AddGitSafeDir": "git config --global --add safe.directory /workspaces/${containerWorkspaceFolderBasename}",
-		"cargo_update": "cargo update",
+		"update": "rustup target add x86_64-unknown-linux-musl && rustup update && cargo update",
 		"clippy": "cargo clippy --fix --allow-dirty"
 	},
 	// Configure tool-specific properties.

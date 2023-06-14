@@ -62,11 +62,19 @@ pub enum Source {
 
 pub fn update_parquet(ticker: Ticker, source: Source) -> Result<(), Box<dyn Error>> {
     let mut df = read_parquet(ticker)?;
-    let last_day = df.clone().collect()?.column("date").unwrap().max();
 
     let update = match source {
         Source::Ark => get_csv_ark(ticker)?,
-        Source::ApiIncremental => get_api(ticker, last_day)?,
+        Source::ApiIncremental => {
+            let last_day = df
+                .clone()
+                .collect()?
+                .column("date")
+                .unwrap()
+                .max()
+                .and_then(NaiveDate::from_num_days_from_ce_opt);
+            get_api(ticker, last_day)?
+        }
         Source::ApiFull => get_api(ticker, None)?,
     };
 
@@ -232,16 +240,15 @@ pub fn df_format(df: LazyFrame) -> Result<DataFrame, Box<dyn Error>> {
     Ok(df)
 }
 
-pub fn get_api(ticker: Ticker, last_day: Option<i32>) -> Result<LazyFrame, Box<dyn Error>> {
+pub fn get_api(ticker: Ticker, last_day: Option<NaiveDate>) -> Result<LazyFrame, Box<dyn Error>> {
     let url = match (ticker, last_day) {
         (Ticker::ARKVC, Some(last_day)) => format!(
             "https://api.nexveridian.com/arkvc_holdings?end={}",
-            NaiveDate::from_num_days_from_ce_opt(last_day).unwrap()
+            last_day
         ),
         (ticker, Some(last_day)) => format!(
             "https://api.nexveridian.com/ark_holdings?ticker={}&end={}",
-            ticker,
-            NaiveDate::from_num_days_from_ce_opt(last_day).unwrap()
+            ticker, last_day
         ),
         (Ticker::ARKVC, None) => "https://api.nexveridian.com/arkvc_holdings".to_owned(),
         (ticker, None) => {
