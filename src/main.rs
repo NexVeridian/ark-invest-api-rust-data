@@ -37,25 +37,26 @@ use util::*;
 // }
 
 fn main() {
-    let read = Ark::new(Source::Read, Ticker::ARKK)
+    let read = Ark::new(Source::Read, Ticker::ARKK, None)
         .unwrap()
         .collect()
         .unwrap();
+    println!("{:#?}", read.dtypes());
     println!("{:#?}", read);
 
-    let api = Ark::new(Source::ApiFull, Ticker::ARKK)
+    let api = Ark::new(Source::ApiFull, Ticker::ARKK, None)
         .unwrap()
         .collect()
         .unwrap();
     println!("{:#?}", api);
 
-    // let ark = Ark::new(Source::Ark, Ticker::ARKK)
+    // let ark = Ark::new(Source::Ark, Ticker::ARKK, None)
     //     .unwrap()
     //     .collect()
     //     .unwrap();
     // println!("{:#?}", ark);
 
-    // let ark = Ark::new(Source::Ark, Ticker::ARKVC)
+    // let ark = Ark::new(Source::Ark, Ticker::ARKVC, None)
     //     .unwrap()
     //     .collect()
     //     .unwrap();
