@@ -61,7 +61,9 @@
 				"Gruntfuggly.todo-tree",
 				"ms-azuretools.vscode-docker",
 				"redhat.vscode-yaml",
-				"GitHub.copilot"
+				// "GitHub.copilot",
+				"GitHub.copilot-nightly",
+				"GitHub.copilot-chat"
 			]
 		}
 	}
