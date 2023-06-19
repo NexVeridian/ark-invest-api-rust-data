@@ -45,7 +45,6 @@
 		"clippy": "cargo clippy --fix --allow-dirty"
 	},
 	// Configure tool-specific properties.
-	// "customizations": {},
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	"remoteUser": "root",
 	"customizations": {
@@ -61,9 +60,9 @@
 				"Gruntfuggly.todo-tree",
 				"ms-azuretools.vscode-docker",
 				"redhat.vscode-yaml",
-				// "GitHub.copilot",
 				"GitHub.copilot-nightly",
 				"GitHub.copilot-chat"
+				// "GitHub.copilot"
 			]
 		}
 	}

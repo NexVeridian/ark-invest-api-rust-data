@@ -1,8 +1,8 @@
 # https://mcr.microsoft.com/en-us/product/devcontainers/rust/about
-FROM mcr.microsoft.com/devcontainers/rust:bullseye
+FROM mcr.microsoft.com/devcontainers/rust:bookworm
 
 RUN apt-get update && \
-	apt install -y build-essential xz-utils musl-tools musl-dev gcc-multilib pkg-config libssl-dev
+	apt install -y build-essential xz-utils musl-tools musl-dev gcc-multilib pkg-config libssl-dev mold
 
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+') && \
 	curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
