@@ -22,6 +22,11 @@
 			"source": "devcontainer-cargo-cache-${containerWorkspaceFolderBasename}",
 			"target": "/usr/local/cargo",
 			"type": "volume"
+		},
+		{
+			"source": "${localWorkspaceFolderBasename}-target",
+			"target": "${containerWorkspaceFolder}/target",
+			"type": "volume"
 		}
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
@@ -56,13 +61,9 @@
 				"rust-lang.rust-analyzer",
 				"mutantdino.resourcemonitor",
 				"christian-kohler.path-intellisense",
-				"Swellaby.vscode-rust-test-adapter",
 				"Gruntfuggly.todo-tree",
 				"ms-azuretools.vscode-docker",
-				"redhat.vscode-yaml",
-				"GitHub.copilot-nightly",
-				"GitHub.copilot-chat"
-				// "GitHub.copilot"
+				"redhat.vscode-yaml"
 			]
 		}
 	}

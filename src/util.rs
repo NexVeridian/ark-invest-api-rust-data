@@ -6,8 +6,9 @@ use polars::prelude::{DataFrame, StrptimeOptions, UniqueKeepStrategy};
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{create_dir_all, File};
 use std::io::Cursor;
+use std::path::{Path, PathBuf};
 use std::result::Result;
 use strum_macros::EnumIter;
 
@@ -157,7 +158,12 @@ impl Ark {
     }
 
     fn write_df_parquet(path: String, df: DF) -> Result<(), Box<dyn Error>> {
-        ParquetWriter::new(File::create(path)?).finish(&mut df.collect()?)?;
+        if let Some(parent) = Path::new(&path).parent() {
+            if !parent.exists() {
+                create_dir_all(parent)?;
+            }
+        }
+        ParquetWriter::new(File::create(&path)?).finish(&mut df.collect()?)?;
         Ok(())
     }
 
