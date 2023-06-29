@@ -25,8 +25,7 @@ fn get_api_arkk() -> Result<(), Box<dyn Error>> {
             "share_price",
             "shares",
             "ticker",
-            "weight",
-            "weight_rank"
+            "weight"
         ]
     );
     Ok(())

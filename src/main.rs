@@ -36,24 +36,29 @@ use util::*;
 //     }
 // }
 
-fn main() {
-    let read = Ark::new(Source::Read, Ticker::ARKK, None)
-        .unwrap()
-        .collect()
-        .unwrap();
-    println!("{:#?}", read.dtypes());
-    println!("{:#?}", read);
-
-    let api = Ark::new(Source::ApiFull, Ticker::ARKK, None)
-        .unwrap()
-        .collect()
-        .unwrap();
-    println!("{:#?}", api);
-
-    // let ark = Ark::new(Source::Ark, Ticker::ARKK, None)
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // let csv = Ark::merge_old_csv_to_parquet(Ticker::ARKK, None)
+    //     .unwrap()
+    //     .format()
+    //     .unwrap()
+    //     .write_parquet()
     //     .unwrap()
     //     .collect()
     //     .unwrap();
+    // println!("{:#?}", csv);
+
+    let read = Ark::new(Source::Read, Ticker::ARKK, None)?.collect()?;
+    println!("{:#?}", read.dtypes());
+    println!("{:#?}", read.get_column_names());
+    println!("{:#?}", read);
+
+    // let api = Ark::new(Source::ApiFull, Ticker::ARKK, None)
+    //     .unwrap()
+    //     .collect()
+    //     .unwrap();
+    // println!("{:#?}", api);
+
+    // let ark = Ark::new(Source::Ark, Ticker::ARKK, None)?.collect()?;
     // println!("{:#?}", ark);
 
     // let ark = Ark::new(Source::Ark, Ticker::ARKVC, None)
@@ -61,4 +66,5 @@ fn main() {
     //     .collect()
     //     .unwrap();
     // println!("{:#?}", ark);
+    Ok(())
 }

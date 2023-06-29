@@ -1,14 +1,14 @@
 use chrono::NaiveDate;
 use glob::glob;
 use polars::datatypes::DataType;
+use polars::lazy::dsl::StrptimeOptions;
 use polars::prelude::*;
-use polars::prelude::{DataFrame, StrptimeOptions, UniqueKeepStrategy};
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::error::Error;
 use std::fs::{create_dir_all, File};
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::result::Result;
 use strum_macros::EnumIter;
 
@@ -249,20 +249,37 @@ impl Ark {
         if df.get_column_names().contains(&"weight_rank") {
             _ = df.drop_in_place("weight_rank");
         }
-
-        let mut expressions: Vec<Expr> = vec![];
+        if df.get_column_names().contains(&"") {
+            let mut cols = df.get_column_names();
+            cols.retain(|&item| !item.is_empty());
+            df = df.select(cols)?;
+        }
 
         if !df.fields().contains(&Field::new("date", DataType::Date)) {
-            expressions.push(col("date").str().strptime(
-                DataType::Date,
-                StrptimeOptions {
-                    format: Some("%m/%d/%Y".into()),
-                    strict: false,
-                    exact: true,
-                    cache: true,
-                },
-            ));
+            let date_format = |df: DataFrame, format: &str| -> Result<DataFrame, Box<dyn Error>> {
+                Ok(df
+                    .lazy()
+                    .with_column(col("date").str().strptime(
+                        DataType::Date,
+                        StrptimeOptions {
+                            format: Some(format.into()),
+                            strict: false,
+                            exact: true,
+                            cache: true,
+                        },
+                    ))
+                    .collect()?)
+            };
+
+            if let Ok(x) = date_format(df.clone(), "%m/%d/%Y") {
+                df = x
+            }
+            if let Ok(x) = date_format(df.clone(), "%Y/%m/%d") {
+                df = x
+            }
         }
+
+        let mut expressions: Vec<Expr> = vec![];
 
         if df.fields().contains(&Field::new("weight", DataType::Utf8)) {
             expressions.push(
