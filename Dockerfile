@@ -1,7 +1,7 @@
 FROM rust:bookworm AS builder
 
 RUN apt-get update && \
-	apt install -y  musl-tools musl-dev libssl-dev clang mold
+	apt install -y musl-tools musl-dev libssl-dev clang mold
 
 # RUN curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
 RUN curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C /usr/local/bin
@@ -25,13 +25,10 @@ RUN --mount=type=cache,target=/usr/local/cargo,from=rust,source=/usr/local/cargo
 	cargo nextest run --release --target x86_64-unknown-linux-musl \
 	-E "all() - test(get_api) - kind(bin)"
 
-FROM alpine:latest
+FROM alpine:latest AS main
 
 WORKDIR /ark-invest-api-rust-data
 
 COPY --from=builder ark-invest-api-rust-data/ark-invest-api-rust-data .
-
-ENV PORT=3000
-EXPOSE 3000
 
 CMD ["./ark-invest-api-rust-data"]

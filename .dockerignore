@@ -1,2 +1,8 @@
+/.devcontainer
+/.vscode
 /target
+.dockerignore
 Cargo.lock
+Dockerfile
+docker-compose.yml
+*.md

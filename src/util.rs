@@ -4,6 +4,8 @@ use polars::datatypes::DataType;
 use polars::lazy::dsl::StrptimeOptions;
 use polars::prelude::*;
 use reqwest::blocking::Client;
+use reqwest::header;
+use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::Value;
 use std::error::Error;
 use std::fs::{create_dir_all, File};
@@ -12,7 +14,7 @@ use std::path::Path;
 use std::result::Result;
 use strum_macros::EnumIter;
 
-#[derive(strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
+#[derive(strum_macros::Display, EnumIter, Clone, Copy, PartialEq, Debug)]
 pub enum Ticker {
     ARKVC,
     ARKF,
@@ -408,8 +410,24 @@ pub enum Reader {
 
 impl Reader {
     pub fn get_data_url(&self, url: String) -> Result<LazyFrame, Box<dyn Error>> {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::USER_AGENT, 
+            HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"),
+        );
+
+        headers.insert(
+            header::ACCEPT, 
+            HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"),
+        );
+        headers.insert(
+            header::ACCEPT_LANGUAGE,
+            HeaderValue::from_static("en-US,en;q=0.8"),
+        );
+
         let response = Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+        .default_headers(headers)
+        .gzip(true)
         .build()?.get(url).send()?;
 
         if !response.status().is_success() {

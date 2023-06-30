@@ -57,7 +57,7 @@
 			"extensions": [
 				"vadimcn.vscode-lldb",
 				"serayuzgur.crates",
-				"bungcip.better-toml",
+				"tamasfe.even-better-toml",
 				"rust-lang.rust-analyzer",
 				"mutantdino.resourcemonitor",
 				"christian-kohler.path-intellisense",

@@ -1,4 +1,20 @@
-Fetches and caches data from csv download and saves the data in parquet format
+Fetches and caches ETF data daily, from csv download or api, and saves the data in parquet format
+
+[api.NexVeridian.com](https://api.NexVeridian.com)
+
+Not affiliated with Ark Invest
+
+# Install for csv download
+Copy docker-compose.yml
+
+Create data folder next to docker-compose.yml
+```
+├───data
+│   └───parquet
+├───docker-compose.yml
+```
+
+`docker compose up --pull always`
 
 # Dev Install
 ## Dev Containers
@@ -18,3 +34,12 @@ Run tests with `cargo t`
 `docker compose build && docker compose up`
 
 Remove the cargo cache for buildkit with `docker builder prune --filter type=exec.cachemount`
+
+# Install for api
+`git clone`
+
+in main.rs change `Source::Ark` to `Source::ApiIncremental` or `Source::ApiFull` for first run
+
+in docker-compose.yml remove this line`image: ghcr.io/NexVeridian/ark-invest-api-rust-data:latest`
+
+uncomment everything else
