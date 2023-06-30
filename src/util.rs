@@ -12,7 +12,7 @@ use std::path::Path;
 use std::result::Result;
 use strum_macros::EnumIter;
 
-#[derive(strum_macros::Display, EnumIter, Clone, Copy)]
+#[derive(strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
 pub enum Ticker {
     ARKVC,
     ARKF,

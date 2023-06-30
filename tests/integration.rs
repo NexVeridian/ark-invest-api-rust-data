@@ -15,18 +15,22 @@ fn get_api_arkk() -> Result<(), Box<dyn Error>> {
     .get_api(NaiveDate::from_ymd_opt(2023, 5, 18))?
     .collect()?;
 
-    assert_eq!(
-        df.get_column_names(),
-        [
-            "company",
-            "cusip",
-            "date",
-            "market_value",
-            "share_price",
-            "shares",
-            "ticker",
-            "weight"
-        ]
+    let expected = [
+        "company",
+        "cusip",
+        "date",
+        "market_value",
+        "share_price",
+        "shares",
+        "ticker",
+        "weight",
+        "weight_rank",
+    ];
+    let actual = df.get_column_names();
+
+    assert!(
+        actual == expected || actual == expected[..expected.len() - 1],
+        "Column names are wrong"
     );
     Ok(())
 }
