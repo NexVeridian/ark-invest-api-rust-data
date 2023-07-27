@@ -82,9 +82,13 @@ impl DFS for Vec<DF> {
 
 #[derive(EnumString, Clone, Copy)]
 pub enum Source {
+    // Reads Parquet file if exists
     Read,
+    // From ARK Invest
     Ark,
+    // From api.NexVeridian.com
     ApiIncremental,
+    // From api.NexVeridian.com, not usually nessisary, use ApiIncremental
     ApiFull,
 }
 pub struct Ark {
@@ -259,25 +263,34 @@ impl Ark {
         }
 
         if !df.fields().contains(&Field::new("date", DataType::Date)) {
-            let date_format = |df: DataFrame, format: &str| -> Result<DataFrame, Box<dyn Error>> {
-                Ok(df
+            let date_format = |mut df: DataFrame, format:Option<String>| -> Result<DataFrame, Box<dyn Error>> {
+                df = df
                     .lazy()
                     .with_column(col("date").str().strptime(
                         DataType::Date,
                         StrptimeOptions {
-                            format: Some(format.into()),
+                            format,
                             strict: false,
                             exact: true,
                             cache: true,
                         },
                     ))
-                    .collect()?)
+                    .collect()?;
+                
+                if df.column("date").unwrap().null_count() > df.height() / 10 {
+                    return Err("wrong date format".into());
+                }
+
+                Ok(df)
             };
 
-            if let Ok(x) = date_format(df.clone(), "%m/%d/%Y") {
+            if let Ok(x) = date_format(df.clone(), Some("%m/%d/%Y".into())) {
                 df = x
             }
-            if let Ok(x) = date_format(df.clone(), "%Y/%m/%d") {
+            else if let Ok(x) = date_format(df.clone(), Some("%Y/%m/%d".into())) {
+                df = x
+            }
+            else if let Ok(x) = date_format(df.clone(), None) {
                 df = x
             }
         }
@@ -397,9 +410,8 @@ impl Ark {
 
         if Self::read_parquet(ticker, path.clone()).is_ok() {
             let df_old = Self::read_parquet(ticker, path.clone())?;
-            df = Self::concat_df(vec![Self::df_format(df_old)?, Self::df_format(df)?])?
+            df = Self::concat_df(vec![Self::df_format(df_old)?, Self::df_format(df)?])?;
         }
-
         Ok(Self { df, ticker, path })
     }
 }

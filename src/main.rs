@@ -1,6 +1,7 @@
 use clokwerk::{AsyncScheduler, Job, TimeUnits};
 use futures::future::join_all;
 use lazy_static::lazy_static;
+use polars::prelude::DataFrame;
 use rand::Rng;
 use std::env;
 use std::error::Error;
@@ -16,9 +17,19 @@ use util::*;
 
 lazy_static! {
     static ref SOURCE: Source = match env::var("ARK_SOURCE") {
-        Ok(val) => Source::from_str(val.as_str()).expect("Env string SOURCE is not in enum Source"),
-        Err(_e) => Source::Ark,
+        Ok(val) =>
+            Source::from_str(val.as_str()).expect("Env string ARK_SOURCE is not in enum Source"),
+        Err(_e) => Source::ApiIncremental,
     };
+}
+
+fn print_df(ticker: &Ticker, df: &DataFrame) {
+    println!(
+        "Ticker: {:#?}\nShape: {:?}\n{:#?}",
+        ticker,
+        df.shape(),
+        df.tail(Some(1))
+    );
 }
 
 fn csv_merge() -> Result<(), Box<dyn Error>> {
@@ -27,8 +38,8 @@ fn csv_merge() -> Result<(), Box<dyn Error>> {
             .format()?
             .sort()?
             .write_parquet()?
-            .collect();
-        println!("Ticker: {:#?}\n{:#?}", ticker, df);
+            .collect()?;
+        print_df(&ticker, &df);
     }
     Ok(())
 }
@@ -44,7 +55,7 @@ fn ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error>> {
         .write_parquet()?
         .collect()?;
 
-    println!("Ticker: {:#?}\n{:#?}", ticker, df.tail(Some(1)));
+    print_df(&ticker, &df);
     Ok(())
 }
 
@@ -73,7 +84,7 @@ async fn main() {
         .map(|v| v == "true")
         .unwrap_or(false)
     {
-        print!("Merging CSVs to Parquet...");
+        println!("Merging CSVs to Parquet");
         csv_merge().unwrap();
     }
 
@@ -84,7 +95,7 @@ async fn main() {
         ark_etf().await;
     }
 
-    scheduler.every(1.day()).at("11:30 pm").run(ark_etf);
+    scheduler.every(1.day()).at("10:00 am").run(ark_etf);
 
     scheduler
         .every(5.day())

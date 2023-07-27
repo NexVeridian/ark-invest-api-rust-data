@@ -4,7 +4,7 @@ Fetches and caches ETF data daily, from csv download or api, and saves the data 
 
 Not affiliated with Ark Invest
 
-# Install for csv download
+# Install
 Copy docker-compose.yml
 
 Create data folder next to docker-compose.yml
@@ -15,6 +15,26 @@ Create data folder next to docker-compose.yml
 ```
 
 `docker compose up --pull always`
+
+# Changing the data source
+In docker-compose.yml, change the data source by changing the environment variable
+```
+environment:
+	- ARK_SOURCE=ApiIncremental
+```
+Env string ARK_SOURCE must be in the enum Source
+```
+pub enum Source {
+    // Reads Parquet file if exists
+    Read,
+    // From ARK Invest
+    Ark,
+    // From api.NexVeridian.com (Default)
+    ApiIncremental,
+	// From api.NexVeridian.com, not usually nessisary, use ApiIncremental
+    ApiFull,
+}
+```
 
 # Dev Install
 ## Dev Containers
@@ -31,15 +51,7 @@ Run tests with `cargo t`
 ## Docker Compose
 `git clone`
 
-`docker compose build && docker compose up`
+`docker compose -f docker-compose.dev.yml build && docker compose -f docker-compose.dev.yml up`
 
 Remove the cargo cache for buildkit with `docker builder prune --filter type=exec.cachemount`
 
-# Install for api
-`git clone`
-
-in main.rs change `Source::Ark` to `Source::ApiIncremental` or `Source::ApiFull` for first run
-
-in docker-compose.yml remove this line`image: ghcr.io/NexVeridian/ark-invest-api-rust-data:latest`
-
-uncomment everything else
