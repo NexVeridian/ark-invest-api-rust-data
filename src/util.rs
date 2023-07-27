@@ -12,7 +12,7 @@ use std::fs::{create_dir_all, File};
 use std::io::Cursor;
 use std::path::Path;
 use std::result::Result;
-use strum_macros::EnumIter;
+use strum_macros::{EnumIter, EnumString};
 
 #[derive(strum_macros::Display, EnumIter, Clone, Copy, PartialEq, Debug)]
 pub enum Ticker {
@@ -80,6 +80,7 @@ impl DFS for Vec<DF> {
     }
 }
 
+#[derive(EnumString, Clone, Copy)]
 pub enum Source {
     Read,
     Ark,

@@ -4,14 +4,14 @@ services:
         image: ghcr.io/NexVeridian/ark-invest-api-rust-data:latest
         # image: ark-invest-api-rust-data
         container_name: ark-invest-api-rust-data
-        build:
-            context: .
-            target: test
-            args:
-                DOCKER_BUILDKIT: 1
         restart: unless-stopped
+        # environment:
+        #     - ARK_SOURCE=ApiIncremental
+        #     - STARTUP_CSV_MERGE=true
+        #     - STARTUP_ARK_ETF=true
         volumes:
             - ./data:/ark-invest-api-rust-data/data
+
     # ark-invest-api-rust-data-test:
     #     container_name: ark-invest-api-rust-data-test
     #     build:

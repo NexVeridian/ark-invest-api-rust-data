@@ -1,53 +1,89 @@
 use clokwerk::{AsyncScheduler, Job, TimeUnits};
 use futures::future::join_all;
+use lazy_static::lazy_static;
 use rand::Rng;
+use std::env;
 use std::error::Error;
 use std::result::Result;
+use std::str::FromStr;
 use std::thread;
 use strum::IntoEnumIterator;
 use tokio::task;
-use tokio::time::{sleep, Duration};
+use tokio::time::Duration;
 
 mod util;
 use util::*;
+
+lazy_static! {
+    static ref SOURCE: Source = match env::var("ARK_SOURCE") {
+        Ok(val) => Source::from_str(val.as_str()).expect("Env string SOURCE is not in enum Source"),
+        Err(_e) => Source::Ark,
+    };
+}
+
+fn csv_merge() -> Result<(), Box<dyn Error>> {
+    for ticker in Ticker::iter() {
+        let df = Ark::merge_old_csv_to_parquet(ticker, None)?
+            .format()?
+            .sort()?
+            .write_parquet()?
+            .collect();
+        println!("Ticker: {:#?}\n{:#?}", ticker, df);
+    }
+    Ok(())
+}
+
+fn ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error>> {
+    println!("Starting: {:#?}", ticker);
+    let sec = Duration::from_secs(rand::thread_rng().gen_range(5 * 60..=30 * 60));
+    // sleep(sec).await;
+    thread::sleep(sec);
+
+    let df = Ark::new(*SOURCE, ticker, None)?
+        .format()?
+        .write_parquet()?
+        .collect()?;
+
+    println!("Ticker: {:#?}\n{:#?}", ticker, df.tail(Some(1)));
+    Ok(())
+}
+
+async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error + Send>> {
+    task::spawn_blocking(move || ark_plan(ticker).unwrap())
+        .await
+        .unwrap();
+    Ok(())
+}
+
+async fn ark_etf() {
+    let futures = Ticker::iter()
+        .filter(|&x| x != Ticker::ARKVC)
+        .map(spawn_ark_plan)
+        .collect::<Vec<_>>();
+
+    join_all(futures).await;
+}
 
 #[tokio::main]
 async fn main() {
     let mut scheduler = AsyncScheduler::new();
     println!("Scheduler Started");
 
-    fn ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error>> {
-        println!("Starting: {:#?}", ticker);
-        let sec = Duration::from_secs(rand::thread_rng().gen_range(5 * 60..=30 * 60));
-        // sleep(sec).await;
-        thread::sleep(sec);
-
-        let df = Ark::new(Source::Ark, ticker, None)?
-            .format()?
-            .write_parquet()?
-            .collect()?;
-
-        println!("Ticker: {:#?}\n{:#?}", ticker, df.tail(Some(1)));
-        Ok(())
+    if env::var("STARTUP_CSV_MERGE")
+        .map(|v| v == "true")
+        .unwrap_or(false)
+    {
+        print!("Merging CSVs to Parquet...");
+        csv_merge().unwrap();
     }
 
-    async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error + Send>> {
-        task::spawn_blocking(move || ark_plan(ticker).unwrap())
-            .await
-            .unwrap();
-        Ok(())
+    if env::var("STARTUP_ARK_ETF")
+        .map(|v| v == "true")
+        .unwrap_or(false)
+    {
+        ark_etf().await;
     }
 
-    async fn ark_etf() {
-        let futures = Ticker::iter()
-            .filter(|&x| x != Ticker::ARKVC)
-            .map(spawn_ark_plan)
-            .collect::<Vec<_>>();
-
-        join_all(futures).await;
-    }
-
-    // ark_etf().await;
     scheduler.every(1.day()).at("11:30 pm").run(ark_etf);
 
     scheduler
