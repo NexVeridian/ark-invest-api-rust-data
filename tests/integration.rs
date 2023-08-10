@@ -12,8 +12,7 @@ fn get_api_arkk() -> Result<(), Box<dyn Error>> {
         Ticker::ARKK,
         Some("data/test".to_owned()),
     )?
-    .get_api(NaiveDate::from_ymd_opt(2023, 5, 18))?
-    .collect()?;
+    .get_api(NaiveDate::from_ymd_opt(2023, 5, 18), None)?;
 
     let expected = [
         "company",
@@ -43,7 +42,7 @@ fn get_api_format_arkk() -> Result<(), Box<dyn Error>> {
         Ticker::ARKK,
         Some("data/test".to_owned()),
     )?
-    .get_api(NaiveDate::from_ymd_opt(2023, 5, 18))?;
+    .get_api(NaiveDate::from_ymd_opt(2023, 5, 18), None)?;
     let df = Ark::df_format(dfl.into())?.collect()?;
 
     assert_eq!(
@@ -83,7 +82,7 @@ fn get_api_format_arkvc() -> Result<(), Box<dyn Error>> {
         Ticker::ARKVC,
         Some("data/test".to_owned()),
     )?
-    .get_api(NaiveDate::from_ymd_opt(2023, 1, 1))?;
+    .get_api(NaiveDate::from_ymd_opt(2023, 1, 1), None)?;
     let df = Ark::df_format(dfl.into())?.collect()?;
 
     assert_eq!(

@@ -29,10 +29,15 @@ pub enum Source {
     Read,
     // From ARK Invest
     Ark,
-    // From api.NexVeridian.com (Default)
+    // From api.NexVeridian.com
+    #[default]
     ApiIncremental,
-	// From api.NexVeridian.com, not usually nessisary, use ApiIncremental
+    // From api.NexVeridian.com, not usually nessisary, use ApiIncremental
     ApiFull,
+    // From arkfunds.io/api, avoid using, use ApiIncremental instead
+    ArkFundsIoIncremental,
+    // From arkfunds.io/api, avoid using, use ApiFull instead
+    ArkFundsIoFull,
 }
 ```
 

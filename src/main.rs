@@ -19,7 +19,7 @@ lazy_static! {
     static ref SOURCE: Source = match env::var("ARK_SOURCE") {
         Ok(val) =>
             Source::from_str(val.as_str()).expect("Env string ARK_SOURCE is not in enum Source"),
-        Err(_e) => Source::ApiIncremental,
+        Err(_) => Source::ApiIncremental,
     };
 }
 
