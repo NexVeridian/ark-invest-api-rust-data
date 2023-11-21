@@ -15,7 +15,7 @@ use strum_macros::{EnumIter, EnumString};
 
 #[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
 pub enum Ticker {
-    ARKVC,
+    ARKVX,
     ARKF,
     ARKG,
     #[default]
@@ -23,17 +23,27 @@ pub enum Ticker {
     ARKQ,
     ARKW,
     ARKX,
+    // ARKA,
+    // ARKZ,
+    ARKC,
+    ARKD,
+    ARKY,
 }
 impl Ticker {
     pub fn value(&self) -> &str {
         match *self {
-            Ticker::ARKVC => "ARKVC",
+            Ticker::ARKVX => "ARKVX",
             Ticker::ARKF => "FINTECH_INNOVATION",
             Ticker::ARKG => "GENOMIC_REVOLUTION",
             Ticker::ARKK => "INNOVATION",
             Ticker::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
             Ticker::ARKW => "NEXT_GENERATION_INTERNET",
             Ticker::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
+            // Ticker::ARKA => "ARKA",
+            // Ticker::ARKZ => "ARKZ",
+            Ticker::ARKC => "ARKC",
+            Ticker::ARKD => "ARKD",
+            Ticker::ARKY => "ARKY",
         }
     }
 }
@@ -342,7 +352,7 @@ impl Ark {
         expressions.push(
             col("ticker")
                 .str()
-                .replace_all(lit("(?i) fp| uq| un| uw"), lit(""), true)
+                .replace_all(lit("(?i) fp| uq| un| uw | cn"), lit(""), true)
                 .str()
                 .replace(lit("DKNN"), lit("DKNG"), true)
                 .str()
@@ -402,6 +412,18 @@ impl Ark {
             df = df.select(["date", "ticker", "cusip", "company", "weight"])?;
         }
 
+        // ARKVX
+        if !df.get_column_names().contains(&"market_value") {
+            df = df
+                .lazy()
+                .with_columns([
+                    Series::new("market_value", [None::<i64>]).lit(),
+                    Series::new("shares", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<i64>]).lit(),
+                ])
+                .collect()?;
+        }
+
         Ok(df.into())
     }
 
@@ -411,8 +433,8 @@ impl Ark {
         source: Option<&Source>,
     ) -> Result<DataFrame, Error> {
         let url = match (&self.ticker, last_day) {
-            (self::Ticker::ARKVC, Some(last_day)) => format!(
-                "https://api.nexveridian.com/arkvc_holdings?start={}",
+            (self::Ticker::ARKVX, Some(last_day)) => format!(
+                "https://api.nexveridian.com/ARKVX_holdings?start={}",
                 last_day
             ),
             (tic, Some(last_day)) => match source {
@@ -425,7 +447,7 @@ impl Ark {
                     tic, last_day
                 ),
             },
-            (self::Ticker::ARKVC, None) => "https://api.nexveridian.com/arkvc_holdings".to_owned(),
+            (self::Ticker::ARKVX, None) => "https://api.nexveridian.com/ARKVX_holdings".to_owned(),
             (tic, None) => match source {
                 Some(Source::ArkFundsIoFull) => {
                     format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}", tic)
@@ -455,7 +477,9 @@ impl Ark {
 
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
         let url = match self.ticker {
-            self::Ticker::ARKVC => "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned(),
+            self::Ticker::ARKVX => "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned(),
+            // self::Ticker::ARKA | self::Ticker::ARKZ |
+            self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
             _ => format!("https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
         };
         Reader::Csv.get_data_url(url)

@@ -67,7 +67,7 @@ async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Error> {
 
 async fn ark_etf() {
     let futures = Ticker::iter()
-        .filter(|&x| x != Ticker::ARKVC)
+        .filter(|&x| x != Ticker::ARKVX)
         .map(spawn_ark_plan)
         .collect::<Vec<_>>();
 
@@ -99,7 +99,7 @@ async fn main() {
     scheduler
         .every(5.day())
         .at("11:30 pm")
-        .run(|| async { if spawn_ark_plan(Ticker::ARKVC).await.is_ok() {} });
+        .run(|| async { if spawn_ark_plan(Ticker::ARKVX).await.is_ok() {} });
 
     loop {
         scheduler.run_pending().await;
