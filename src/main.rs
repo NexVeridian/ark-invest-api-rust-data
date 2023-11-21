@@ -1,11 +1,10 @@
+use anyhow::{Error, Result};
 use clokwerk::{AsyncScheduler, Job, TimeUnits};
 use futures::future::join_all;
 use lazy_static::lazy_static;
 use polars::prelude::DataFrame;
 use rand::Rng;
 use std::env;
-use std::error::Error;
-use std::result::Result;
 use std::str::FromStr;
 use std::thread;
 use strum::IntoEnumIterator;
@@ -32,7 +31,7 @@ fn print_df(ticker: &Ticker, df: &DataFrame) {
     );
 }
 
-fn csv_merge() -> Result<(), Box<dyn Error>> {
+fn csv_merge() -> Result<(), Error> {
     for ticker in Ticker::iter() {
         let df = Ark::merge_old_csv_to_parquet(ticker, None)?
             .format()?
@@ -44,9 +43,9 @@ fn csv_merge() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error>> {
+fn ark_plan(ticker: Ticker) -> Result<(), Error> {
     println!("Starting: {:#?}", ticker);
-    let sec = Duration::from_secs(rand::thread_rng().gen_range(30 * 60..=4* 60 * 60));
+    let sec = Duration::from_secs(rand::thread_rng().gen_range(30 * 60..=4 * 60 * 60));
     // sleep(sec).await;
     thread::sleep(sec);
 
@@ -59,7 +58,7 @@ fn ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Box<dyn Error + Send>> {
+async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Error> {
     task::spawn_blocking(move || ark_plan(ticker).unwrap())
         .await
         .unwrap();

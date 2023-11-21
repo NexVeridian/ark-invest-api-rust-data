@@ -63,7 +63,9 @@
 				"christian-kohler.path-intellisense",
 				"Gruntfuggly.todo-tree",
 				"ms-azuretools.vscode-docker",
-				"redhat.vscode-yaml"
+				"redhat.vscode-yaml",
+				"GitHub.copilot",
+				"GitHub.copilot-chat"
 			]
 		}
 	}
