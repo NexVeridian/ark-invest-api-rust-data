@@ -10,7 +10,7 @@ services:
         restart: no
 
     ark-invest-api-rust-data:
-        # image: ghcr.io/NexVeridian/ark-invest-api-rust-data:latest
+        # image: ghcr.io/nexveridian/ark-invest-api-rust-data:latest
         image: ark-invest-api-rust-data
         container_name: ark-invest-api-rust-data
         build:
@@ -20,9 +20,9 @@ services:
                 DOCKER_BUILDKIT: 1
         restart: no
         environment:
-            - ARK_SOURCE=ARK
+            - ARK_SOURCE=Ark
             # - STARTUP_CSV_MERGE=true
-            # - STARTUP_ARK_ETF=true
+            - STARTUP_ARK_ETF=true
         volumes:
             - ./data:/ark-invest-api-rust-data/data
 

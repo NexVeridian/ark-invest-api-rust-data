@@ -228,8 +228,73 @@ impl Ark {
         Ok(self)
     }
 
-    pub fn df_format(df: DF) -> Result<DF, Error> {
+    fn df_format_21shares(df: DF) -> Result<DF, Error> {
         let mut df = df.collect()?;
+
+        if df.get_column_names().contains(&"Weightings") {
+            df = df
+                .lazy()
+                .rename(
+                    vec![
+                        "Date",
+                        "StockTicker",
+                        "CUSIP",
+                        "SecurityName",
+                        "Shares",
+                        "Price",
+                        "MarketValue",
+                        "Weightings",
+                    ],
+                    vec![
+                        "date",
+                        "ticker",
+                        "cusip",
+                        "company",
+                        "shares",
+                        "share_price",
+                        "market_value",
+                        "weight",
+                    ],
+                )
+                .collect()?;
+
+            _ = df.drop_in_place("Account");
+            _ = df.drop_in_place("NetAssets");
+            _ = df.drop_in_place("SharesOutstanding");
+            _ = df.drop_in_place("CreationUnits");
+            _ = df.drop_in_place("MoneyMarketFlag");
+        }
+
+        Ok(df.into())
+    }
+
+    fn df_format_arkvx(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if df.get_column_names().contains(&"CUSIP") {
+            df = df
+                .lazy()
+                .rename(vec!["CUSIP", "weight (%)"], vec!["cusip", "weight"])
+                .collect()?;
+
+            if !df.get_column_names().contains(&"market_value") {
+                df = df
+                    .lazy()
+                    .with_columns([
+                        Series::new("market_value", [None::<i64>]).lit(),
+                        Series::new("shares", [None::<i64>]).lit(),
+                        Series::new("share_price", [None::<i64>]).lit(),
+                    ])
+                    .collect()?;
+            }
+        }
+
+        Ok(df.into())
+    }
+
+    pub fn df_format(df: DF) -> Result<DF, Error> {
+        let mut df = Self::df_format_21shares(df)?.collect()?;
+        df = Self::df_format_arkvx(df.into())?.collect()?;
 
         if df.get_column_names().contains(&"market_value_($)") {
             df = df
@@ -247,12 +312,6 @@ impl Ark {
                     vec!["market value ($)", "weight (%)"],
                     vec!["market_value", "weight"],
                 )
-                .collect()?;
-        }
-        if df.get_column_names().contains(&"CUSIP") {
-            df = df
-                .lazy()
-                .rename(vec!["CUSIP", "weight (%)"], vec!["cusip", "weight"])
                 .collect()?;
         }
 
@@ -352,7 +411,7 @@ impl Ark {
         expressions.push(
             col("ticker")
                 .str()
-                .replace_all(lit("(?i) fp| uq| un| uw | cn"), lit(""), true)
+                .replace_all(lit("(?i) fp| uq| un| uw | cn"), lit(""), false)
                 .str()
                 .replace(lit("DKNN"), lit("DKNG"), true)
                 .str()
@@ -361,9 +420,9 @@ impl Ark {
         expressions.push(
             col("company")
                 .str()
-                .replace_all(lit("(?i) a| cl| class| inc| ltd| corp| corporation| c| cl| se| hold| holdings| international|-|,|."), lit(""), true)
+                .replace_all(lit(r"(?i:-A| ADR| A| Cl| Class| Inc| incorporated| Ltd| Corp| Corporation| C| Cl| SE| Hold| Holdings| International|,|\.|-)"), lit(""), false)
                 .str()
-                .replace(lit("(?i)Coinbase Global"), lit("Coinbase"), true)
+                .replace(lit("(?i)Coinbase Global"), lit("Coinbase"), false)
                 .str()
                 .replace(lit("Blackdaemon"), lit("Blockdaemon"), true)
                 .str()
@@ -410,18 +469,6 @@ impl Ark {
             .eq(&["date", "ticker", "cusip", "company", "weight"])
         {
             df = df.select(["date", "ticker", "cusip", "company", "weight"])?;
-        }
-
-        // ARKVX
-        if !df.get_column_names().contains(&"market_value") {
-            df = df
-                .lazy()
-                .with_columns([
-                    Series::new("market_value", [None::<i64>]).lit(),
-                    Series::new("shares", [None::<i64>]).lit(),
-                    Series::new("share_price", [None::<i64>]).lit(),
-                ])
-                .collect()?;
         }
 
         Ok(df.into())
@@ -490,6 +537,7 @@ impl Ark {
         for x in glob(&format!("data/csv/{}/*", ticker))?.filter_map(Result::ok) {
             dfs.push(LazyCsvReader::new(x).finish()?);
         }
+
         let mut df = concat(
             dfs,
             UnionArgs {
@@ -501,6 +549,7 @@ impl Ark {
         if Self::read_parquet(&ticker, path.as_ref()).is_ok() {
             let df_old = Self::read_parquet(&ticker, path.as_ref())?;
             df = Self::concat_df(vec![Self::df_format(df_old)?, Self::df_format(df)?])?;
+            df = Self::df_format(df)?;
         }
         Ok(Self { df, ticker, path })
     }
@@ -517,7 +566,7 @@ impl Reader {
         let mut headers = HeaderMap::new();
         headers.insert(
             header::USER_AGENT,
-            HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"),
+            HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
         );
 
         headers.insert(

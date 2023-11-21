@@ -1,13 +1,13 @@
 version: "3"
 services:
     ark-invest-api-rust-data:
-        image: ghcr.io/NexVeridian/ark-invest-api-rust-data:latest
+        image: ghcr.io/nexveridian/ark-invest-api-rust-data:latest
         container_name: ark-invest-api-rust-data
         restart: unless-stopped
-        # environment:
-        #     - ARK_SOURCE=ApiIncremental
-        #     - STARTUP_CSV_MERGE=true
-        #     - STARTUP_ARK_ETF=true
+        environment:
+            - ARK_SOURCE=ApiIncremental
+            # - STARTUP_CSV_MERGE=true
+            # - STARTUP_ARK_ETF=true
         volumes:
             - ./data:/ark-invest-api-rust-data/data
 
