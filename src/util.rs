@@ -5,8 +5,6 @@ use polars::datatypes::DataType;
 use polars::lazy::dsl::StrptimeOptions;
 use polars::prelude::*;
 use reqwest::blocking::Client;
-use reqwest::header;
-use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::Value;
 use std::fs::{create_dir_all, File};
 use std::io::Cursor;
@@ -413,22 +411,22 @@ impl Ark {
                 .str()
                 .replace_all(lit("(?i) fp| uq| un| uw | cn"), lit(""), false)
                 .str()
-                .replace(lit("DKNN"), lit("DKNG"), true)
-                .str()
-                .strip_chars(lit("None")),
+                .replace(lit("DKNN"), lit("DKNG"), true),
+                // .str()
+                // .strip_chars(lit("None")),
         );
         expressions.push(
             col("company")
-                .str()
-                .replace_all(lit(r"(?i:-A| ADR| A| Cl| Class| Inc| incorporated| Ltd| Corp| Corporation| C| Cl| SE| Hold| Holdings| International|,|\.|-)"), lit(""), false)
+                // .str()
+                // .replace_all(lit(r"(?i: incorporated| corporation| holdings| international|,|\.|-)"), lit(""), false)
                 .str()
                 .replace(lit("(?i)Coinbase Global"), lit("Coinbase"), false)
                 .str()
                 .replace(lit("Blackdaemon"), lit("Blockdaemon"), true)
                 .str()
-                .replace(lit("DISCOVERY"), lit("Dassault Systemes"), true)
-                .str()
-                .strip_chars(lit("None")),
+                .replace(lit("DISCOVERY"), lit("Dassault Systemes"), true),
+                // .str()
+                // .strip_chars(lit("None")),
         );
 
         // run expressions
@@ -563,23 +561,8 @@ pub enum Reader {
 
 impl Reader {
     pub fn get_data_url(&self, url: String) -> Result<DataFrame, Error> {
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            header::USER_AGENT,
-            HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"),
-        );
-
-        headers.insert(
-            header::ACCEPT,
-            HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"),
-        );
-        headers.insert(
-            header::ACCEPT_LANGUAGE,
-            HeaderValue::from_static("en-US,en;q=0.8"),
-        );
-
         let response = Client::builder()
-            .default_headers(headers)
+            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
             .gzip(true)
             .build()?
             .get(url)
