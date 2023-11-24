@@ -343,7 +343,6 @@ impl Ark {
                                 strict: false,
                                 ..Default::default()
                             },
-                            lit("earliest"),
                         ))
                         .collect()?;
 
@@ -409,24 +408,66 @@ impl Ark {
         expressions.push(
             col("ticker")
                 .str()
-                .replace_all(lit("(?i) fp| uq| un| uw | cn"), lit(""), false)
+                .replace_all(lit(" FP"), lit(""), true)
                 .str()
-                .replace(lit("DKNN"), lit("DKNG"), true),
-                // .str()
-                // .strip_chars(lit("None")),
+                .replace_all(lit(" UQ"), lit(""), true)
+                .str()
+                .replace_all(lit(" UF"), lit(""), true)
+                .str()
+                .replace_all(lit(" UN"), lit(""), true)
+                .str()
+                .replace_all(lit(" UW"), lit(""), true)
+                .str()
+                .replace_all(lit(" CN"), lit(""), true)
+                .str()
+                .replace(lit("DKNN"), lit("DKNG"), true)
+                .str()
+                .rstrip(None),
         );
         expressions.push(
             col("company")
-                // .str()
-                // .replace_all(lit(r"(?i: incorporated| corporation| holdings| international|,|\.|-)"), lit(""), false)
                 .str()
-                .replace(lit("(?i)Coinbase Global"), lit("Coinbase"), false)
+                .replace_all(lit("-A"), lit(""), true)
+                .str()
+                .replace_all(lit("- A"), lit(""), true)
+                .str()
+                .replace_all(lit("CL A"), lit(""), true)
+                .str()
+                .replace_all(lit("CLASS A"), lit(""), true)
+                .str()
+                .replace_all(lit("Inc"), lit(""), true)
+                .str()
+                .replace_all(lit("INC"), lit(""), true)
+                .str()
+                .replace_all(lit("incorporated"), lit(""), true)
+                .str()
+                .replace_all(lit("LTD"), lit(""), true)
+                .str()
+                .replace_all(lit("CORP"), lit(""), true)
+                .str()
+                .replace_all(lit("CORPORATION"), lit(""), true)
+                .str()
+                .replace_all(lit("Corporation"), lit(""), true)
+                .str()
+                .replace_all(lit("- C"), lit(""), true)
+                .str()
+                .replace_all(lit("-"), lit(""), true)
+                .str()
+                .replace_all(lit(","), lit(""), true)
+                .str()
+                .replace_all(lit("."), lit(""), true)
+                .str()
+                .replace(lit("ORATION"), lit(""), true)
+                .str()
+                .replace(lit("COINBASE GLOBAL"), lit("COINBASE"), true)
+                .str()
+                .replace(lit("Coinbase Global"), lit("Coinbase"), true)
                 .str()
                 .replace(lit("Blackdaemon"), lit("Blockdaemon"), true)
                 .str()
-                .replace(lit("DISCOVERY"), lit("Dassault Systemes"), true),
-                // .str()
-                // .strip_chars(lit("None")),
+                .replace(lit("DISCOVERY"), lit("Dassault Systemes"), true)
+                .str()
+                .rstrip(None),
         );
 
         // run expressions
@@ -479,7 +520,7 @@ impl Ark {
     ) -> Result<DataFrame, Error> {
         let url = match (&self.ticker, last_day) {
             (self::Ticker::ARKVX, Some(last_day)) => format!(
-                "https://api.nexveridian.com/ARKVX_holdings?start={}",
+                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start={}",
                 last_day
             ),
             (tic, Some(last_day)) => match source {
@@ -492,7 +533,7 @@ impl Ark {
                     tic, last_day
                 ),
             },
-            (self::Ticker::ARKVX, None) => "https://api.nexveridian.com/ARKVX_holdings".to_owned(),
+            (self::Ticker::ARKVX, None) => "https://api.nexveridian.com/ark_holdings?ticker=ARKVX".to_owned(),
             (tic, None) => match source {
                 Some(Source::ArkFundsIoFull) => {
                     format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}", tic)
