@@ -274,17 +274,17 @@ impl Ark {
                 .lazy()
                 .rename(vec!["CUSIP", "weight (%)"], vec!["cusip", "weight"])
                 .collect()?;
+        }
 
-            if !df.get_column_names().contains(&"market_value") {
-                df = df
-                    .lazy()
-                    .with_columns([
-                        Series::new("market_value", [None::<i64>]).lit(),
-                        Series::new("shares", [None::<i64>]).lit(),
-                        Series::new("share_price", [None::<i64>]).lit(),
-                    ])
-                    .collect()?;
-            }
+        if !df.get_column_names().contains(&"market_value") {
+            df = df
+                .lazy()
+                .with_columns([
+                    Series::new("market_value", [None::<i64>]).lit(),
+                    Series::new("shares", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<i64>]).lit(),
+                ])
+                .collect()?;
         }
 
         Ok(df.into())
@@ -360,6 +360,25 @@ impl Ark {
             } else if let Ok(x) = date_format(df.clone(), None) {
                 df = x
             }
+        }
+
+        // format arkw, ARK BITCOIN ETF HOLDCO (ARKW) to ARKB
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![
+                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKW)")))
+                    .then(lit("ARKB"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKW)")))
+                    .then(lit("ARKB"))
+                    .otherwise(col("company"))
+                    .alias("company"),
+            ])
+            .collect()
+        {
+            df = x;
         }
 
         let mut expressions: Vec<Expr> = vec![];
@@ -457,6 +476,12 @@ impl Ark {
                 .str()
                 .replace_all(lit("."), lit(""), true)
                 .str()
+                .replace(lit("HLDGS"), lit(""), true)
+                .str()
+                .replace(lit("HOLDINGS"), lit(""), true)
+                .str()
+                .replace(lit("Holdings"), lit(""), true)
+                .str()
                 .replace(lit("ORATION"), lit(""), true)
                 .str()
                 .replace(lit("COINBASE GLOBAL"), lit("COINBASE"), true)
@@ -533,7 +558,9 @@ impl Ark {
                     tic, last_day
                 ),
             },
-            (self::Ticker::ARKVX, None) => "https://api.nexveridian.com/ark_holdings?ticker=ARKVX".to_owned(),
+            (self::Ticker::ARKVX, None) => {
+                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX".to_owned()
+            }
             (tic, None) => match source {
                 Some(Source::ArkFundsIoFull) => {
                     format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}", tic)
@@ -658,6 +685,42 @@ mod tests {
         fs::remove_file("data/test/ARKK.parquet")?;
 
         assert_eq!(read, test_df);
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn arkw_format_arkb() -> Result<(), Error> {
+        let test_df = df![
+            "date" => ["2024-01-01", "2024-01-02"],
+            "ticker" => [None::<&str>, Some("TSLA")],
+            "cusip" => ["123abc", "TESLA"],
+            "company" => ["ARK BITCOIN ETF HOLDCO (ARKW)", "TESLA"],
+            "market_value" => [100, 400],
+            "shares" => [10, 20],
+            "share_price" => [10, 20],
+            "weight" => [10.00, 20.00]
+        ]?;
+
+        Ark::write_df_parquet("data/test/ARKW.parquet".into(), test_df.clone().into())?;
+        let read = Ark::new(Source::Read, Ticker::ARKW, Some("data/test".to_owned()))?.collect()?;
+        fs::remove_file("data/test/ARKW.parquet")?;
+
+        let df = Ark::df_format(read.into())?.collect()?;
+        assert_eq!(
+            df,
+            df![
+                "date" => ["2024-01-01", "2024-01-02"],
+                "ticker" => ["ARKB", "TSLA"],
+                "cusip" => ["123abc", "TESLA"],
+                "company" => ["ARKB", "TESLA"],
+                "market_value" => [100, 400],
+                "shares" => [10, 20],
+                "share_price" => [10, 20],
+                "weight" => [10.00, 20.00]
+            ]?
+        );
+
         Ok(())
     }
 }
