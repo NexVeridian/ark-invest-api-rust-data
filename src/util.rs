@@ -376,6 +376,16 @@ impl Ark {
                     .otherwise(col("company"))
                     .alias("company"),
             ])
+            .with_columns(vec![
+                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKF)")))
+                    .then(lit("ARKB"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKF)")))
+                    .then(lit("ARKB"))
+                    .otherwise(col("company"))
+                    .alias("company"),
+            ])
             .collect()
         {
             df = x;
@@ -705,6 +715,42 @@ mod tests {
         Ark::write_df_parquet("data/test/ARKW.parquet".into(), test_df.clone().into())?;
         let read = Ark::new(Source::Read, Ticker::ARKW, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKW.parquet")?;
+
+        let df = Ark::df_format(read.into())?.collect()?;
+        assert_eq!(
+            df,
+            df![
+                "date" => ["2024-01-01", "2024-01-02"],
+                "ticker" => ["ARKB", "TSLA"],
+                "cusip" => ["123abc", "TESLA"],
+                "company" => ["ARKB", "TESLA"],
+                "market_value" => [100, 400],
+                "shares" => [10, 20],
+                "share_price" => [10, 20],
+                "weight" => [10.00, 20.00]
+            ]?
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn arkf_format_arkb() -> Result<(), Error> {
+        let test_df = df![
+            "date" => ["2024-01-01", "2024-01-02"],
+            "ticker" => [None::<&str>, Some("TSLA")],
+            "cusip" => ["123abc", "TESLA"],
+            "company" => ["ARK BITCOIN ETF HOLDCO (ARKF)", "TESLA"],
+            "market_value" => [100, 400],
+            "shares" => [10, 20],
+            "share_price" => [10, 20],
+            "weight" => [10.00, 20.00]
+        ]?;
+
+        Ark::write_df_parquet("data/test/ARKF.parquet".into(), test_df.clone().into())?;
+        let read = Ark::new(Source::Read, Ticker::ARKF, Some("data/test".to_owned()))?.collect()?;
+        fs::remove_file("data/test/ARKF.parquet")?;
 
         let df = Ark::df_format(read.into())?.collect()?;
         assert_eq!(
