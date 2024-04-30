@@ -502,6 +502,12 @@ impl Ark {
                 .str()
                 .replace(lit("DISCOVERY"), lit("Dassault Systemes"), true)
                 .str()
+                .replace(lit("Space Investment"), lit("SpaceX"), true)
+                .str()
+                .replace(lit("Space Exploration Technologies Corp"), lit("SpaceX"), true)
+                .str()
+                .replace(lit("Space Exploration Technologies Co"), lit("SpaceX"), true)
+                .str()
                 .rstrip(None),
         );
 
