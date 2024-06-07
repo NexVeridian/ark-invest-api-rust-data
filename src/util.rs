@@ -33,7 +33,7 @@ pub enum Ticker {
 impl Ticker {
     pub fn value(&self) -> &str {
         match *self {
-            Ticker::ARKVX => "ARKVX",
+            Ticker::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
             Ticker::ARKF => "FINTECH_INNOVATION",
             Ticker::ARKG => "GENOMIC_REVOLUTION",
             Ticker::ARKK => "INNOVATION",
@@ -279,6 +279,12 @@ impl Ark {
             df = df
                 .lazy()
                 .rename(vec!["CUSIP", "weight (%)"], vec!["cusip", "weight"])
+                .collect()?;
+        }
+        if df.get_column_names().contains(&"weight (%)") {
+            df = df
+                .lazy()
+                .rename(vec!["weight (%)"], vec!["weight"])
                 .collect()?;
         }
 
@@ -612,7 +618,7 @@ impl Ark {
 
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
         let url = match self.ticker {
-            self::Ticker::ARKVX => "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned(),
+            self::Ticker::ARKVX => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.ticker.value()),
             self::Ticker::ARKA | self::Ticker::ARKZ |
             self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
             _ => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
