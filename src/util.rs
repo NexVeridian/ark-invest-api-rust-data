@@ -21,8 +21,8 @@ pub enum Ticker {
     ARKQ,
     ARKW,
     ARKX,
-    // ARKA,
-    // ARKZ,
+    ARKA,
+    ARKZ,
     ARKC,
     ARKD,
     ARKY,
@@ -37,8 +37,8 @@ impl Ticker {
             Ticker::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
             Ticker::ARKW => "NEXT_GENERATION_INTERNET",
             Ticker::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
-            // Ticker::ARKA => "ARKA",
-            // Ticker::ARKZ => "ARKZ",
+            Ticker::ARKA => "ARKA",
+            Ticker::ARKZ => "ARKZ",
             Ticker::ARKC => "ARKC",
             Ticker::ARKD => "ARKD",
             Ticker::ARKY => "ARKY",
@@ -607,7 +607,7 @@ impl Ark {
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
         let url = match self.ticker {
             self::Ticker::ARKVX => "https://ark-ventures.com/wp-content/uploads/funds-etf-csv/ARK_VENTURE_FUND_HOLDINGS.csv".to_owned(),
-            // self::Ticker::ARKA | self::Ticker::ARKZ |
+            self::Ticker::ARKA | self::Ticker::ARKZ |
             self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
             _ => format!("https://ark-funds.com/wp-content/uploads/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
         };

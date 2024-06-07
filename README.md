@@ -23,7 +23,7 @@ environment:
 	- ARK_SOURCE=ApiIncremental
 ```
 Env string ARK_SOURCE must be in the enum Source
-```
+```rust
 pub enum Source {
     // Reads Parquet file if exists
     Read,
