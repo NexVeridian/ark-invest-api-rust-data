@@ -1,4 +1,3 @@
-version: "3"
 services:
     ark-invest-api-rust-data:
         image: ghcr.io/nexveridian/ark-invest-api-rust-data:latest

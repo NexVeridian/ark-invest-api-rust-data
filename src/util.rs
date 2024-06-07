@@ -27,6 +27,8 @@ pub enum Ticker {
     ARKD,
     ARKY,
     ARKB,
+    PRNT,
+    IZRL
 }
 impl Ticker {
     pub fn value(&self) -> &str {
@@ -44,6 +46,8 @@ impl Ticker {
             Ticker::ARKD => "ARKD",
             Ticker::ARKY => "ARKY",
             Ticker::ARKB => "21SHARES_BITCOIN",
+            Ticker::PRNT => "THE_3D_PRINTING",
+            Ticker::IZRL => "ISRAEL_INNOVATIVE_TECHNOLOGY",
         }
     }
 }
