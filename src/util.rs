@@ -445,6 +445,13 @@ impl Ark {
             );
         }
 
+        if df
+            .fields()
+            .contains(&Field::new("shares", DataType::Float64))
+        {
+            expressions.push(col("shares").cast(DataType::Int64));
+        }
+
         // rename values
         expressions.push(
             col("ticker")
