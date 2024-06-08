@@ -351,10 +351,35 @@ impl Ark {
         Ok(df.into())
     }
 
+    fn df_format_europe_arkfundsio(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if df
+            .get_column_names()
+            .eq(&["fund", "date", "company", "cusip", "weight", "weight_rank"])
+        {
+            _ = df.drop_in_place("fund");
+            _ = df.drop_in_place("weight_rank");
+
+            df = df
+                .lazy()
+                .with_columns([
+                    Series::new("ticker", [None::<&str>]).lit(),
+                    Series::new("market_value", [None::<i64>]).lit(),
+                    Series::new("shares", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<i64>]).lit(),
+                ])
+                .collect()?;
+        }
+
+        Ok(df.into())
+    }
+
     pub fn df_format(df: DF) -> Result<DF, Error> {
         let mut df = Self::df_format_21shares(df)?.collect()?;
         df = Self::df_format_arkvx(df.into())?.collect()?;
         df = Self::df_format_europe(df.into())?.collect()?;
+        df = Self::df_format_europe_arkfundsio(df.into())?.collect()?;
 
         if df.get_column_names().contains(&"market_value_($)") {
             df = df
@@ -375,18 +400,13 @@ impl Ark {
                 .collect()?;
         }
 
-        // if df.rename("market_value_($)", "market_value").is_ok() {}
-        // if df.rename("market value ($)", "market_value").is_ok() {}
-        // if df.rename("weight_(%)", "weight").is_ok() {}
-        // if df.rename("weight (%)", "weight").is_ok() {}
-        // if df.rename("CUSIP", "cusip").is_ok() {}
-
         if df.get_column_names().contains(&"fund") {
             _ = df.drop_in_place("fund");
         }
         if df.get_column_names().contains(&"weight_rank") {
             _ = df.drop_in_place("weight_rank");
         }
+
         if df.get_column_names().contains(&"") {
             let mut cols = df.get_column_names();
             cols.retain(|&item| !item.is_empty());
@@ -689,16 +709,13 @@ impl Ark {
 
         let mut df = Reader::Json.get_data_url(url)?;
         df = match source {
-            Some(Source::ArkFundsIoIncremental) | Some(Source::ArkFundsIoFull) => {
-                df = df
-                    .column("holdings")?
-                    .clone()
-                    .explode()?
-                    .struct_()?
-                    .clone()
-                    .unnest();
-                df
-            }
+            Some(Source::ArkFundsIoIncremental) | Some(Source::ArkFundsIoFull) => df
+                .column("holdings")?
+                .clone()
+                .explode()?
+                .struct_()?
+                .clone()
+                .unnest(),
             _ => df,
         };
         Ok(df)
