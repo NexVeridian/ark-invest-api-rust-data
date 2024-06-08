@@ -1,6 +1,6 @@
-Fetches and caches ETF data daily, from csv download or api, and saves the data in parquet format
+Fetches and caches ETF data daily, from csv download or api, and saves the data to a parquet file
 
-[api.NexVeridian.com](https://api.NexVeridian.com)
+The code for the REST API is [github.com/NexVeridian/ark-invest-api-rust](https://github.com/NexVeridian/ark-invest-api-rust) and is hosted at [api.NexVeridian.com](https://api.NexVeridian.com)
 
 Not affiliated with Ark Invest
 
@@ -16,7 +16,7 @@ Create data folder next to docker-compose.yml
 
 `docker compose up --pull always`
 
-If build the parquet file from the first time use: `ARK_SOURCE=ApiFull` or `ARK_SOURCE=ArkFundsIoFull`
+If building the parquet file from the first time use: `ARK_SOURCE=ApiFull` or `ARK_SOURCE=ArkFundsIoFull`
 
 Afterwards use `ARK_SOURCE=ApiIncremental`
 
