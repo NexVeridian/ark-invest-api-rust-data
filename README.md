@@ -16,6 +16,10 @@ Create data folder next to docker-compose.yml
 
 `docker compose up --pull always`
 
+If build the parquet file from the first time use: `ARK_SOURCE=ApiFull` or `ARK_SOURCE=ArkFundsIoFull`
+
+Afterwards use `ARK_SOURCE=ApiIncremental`
+
 # Changing the data source
 In docker-compose.yml, change the data source by changing the environment variable
 ```

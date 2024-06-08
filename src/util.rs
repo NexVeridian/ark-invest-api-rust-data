@@ -602,37 +602,34 @@ impl Ark {
         last_day: Option<NaiveDate>,
         source: Option<&Source>,
     ) -> Result<DataFrame, Error> {
-        let url = match (&self.ticker, last_day) {
-            (self::Ticker::ARKVX, Some(last_day)) => format!(
+        let default_start_day = "2000-01-01";
+        let url = match (&self.ticker, last_day, source) {
+            (self::Ticker::ARKVX, Some(last_day), _) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start={}",
                 last_day
             ),
-            (tic, Some(last_day)) => match source {
-                Some(Source::ArkFundsIoIncremental) => format!(
-                    "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
-                    tic, last_day
-                ),
-                _ => format!(
-                    "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
-                    tic, last_day
-                ),
-            },
-            (self::Ticker::ARKVX, None) => {
-                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start=2000-01-01".to_owned()
-            }
-            (tic, None) => {
-                match source {
-                    Some(Source::ArkFundsIoFull) => {
-                        format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from=2000-01-01", tic)
-                    }
-                    _ => {
-                        format!(
-                            "https://api.nexveridian.com/ark_holdings?ticker={}&start=2000-01-01",
-                            tic
-                        )
-                    }
-                }
-            }
+            (self::Ticker::ARKVX, None, _) => format!(
+                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start={}",
+                default_start_day
+            ),
+
+            (tic, Some(last_day), Some(Source::ArkFundsIoIncremental)) => format!(
+                "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
+                tic, last_day
+            ),
+            (tic, None, Some(Source::ArkFundsIoFull)) => format!(
+                "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
+                tic, default_start_day
+            ),
+
+            (tic, Some(last_day), _) => format!(
+                "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
+                tic, last_day
+            ),
+            (tic, None, _) => format!(
+                "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
+                tic, default_start_day
+            ),
         };
 
         let mut df = Reader::Json.get_data_url(url)?;
@@ -655,8 +652,8 @@ impl Ark {
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
         let url = match self.ticker {
             self::Ticker::ARKVX => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.ticker.value()),
-            self::Ticker::ARKA | self::Ticker::ARKZ |
-            self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
+            self::Ticker::ARKA | self::Ticker::ARKZ | self::Ticker::ARKC | self::Ticker::ARKD |
+            self::Ticker::ARKY => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
             _ => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
         };
         Reader::Csv.get_data_url(url)
