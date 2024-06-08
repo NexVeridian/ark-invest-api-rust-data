@@ -318,7 +318,7 @@ impl Ark {
                 .with_columns([
                     Series::new("market_value", [None::<i64>]).lit(),
                     Series::new("shares", [None::<i64>]).lit(),
-                    Series::new("share_price", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<f64>]).lit(),
                 ])
                 .collect()?;
         }
@@ -340,10 +340,10 @@ impl Ark {
                 )
                 .with_columns([
                     Series::new("date", [chrono::Local::now().naive_local()]).lit(),
-                    Series::new("ticker", [None::<&str>]).lit(),
+                    Series::new("ticker", [None::<String>]).lit(),
                     Series::new("market_value", [None::<i64>]).lit(),
                     Series::new("shares", [None::<i64>]).lit(),
-                    Series::new("share_price", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<f64>]).lit(),
                 ])
                 .collect()?;
         }
@@ -356,7 +356,7 @@ impl Ark {
 
         if df
             .get_column_names()
-            .eq(&["fund", "date", "company", "cusip", "weight", "weight_rank"])
+            .eq(&["company", "cusip", "date", "fund", "weight", "weight_rank"])
         {
             _ = df.drop_in_place("fund");
             _ = df.drop_in_place("weight_rank");
@@ -364,30 +364,32 @@ impl Ark {
             df = df
                 .lazy()
                 .with_columns([
-                    Series::new("ticker", [None::<&str>]).lit(),
+                    Series::new("ticker", [None::<String>]).lit(),
                     Series::new("market_value", [None::<i64>]).lit(),
                     Series::new("shares", [None::<i64>]).lit(),
-                    Series::new("share_price", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<f64>]).lit(),
                 ])
                 .collect()?;
         }
-
         Ok(df.into())
     }
 
     pub fn df_format(df: DF) -> Result<DF, Error> {
-        let mut df = Self::df_format_21shares(df)?.collect()?;
+        let mut df = Self::df_format_europe_arkfundsio(df)?.collect()?;
+        df = Self::df_format_21shares(df.into())?.collect()?;
         df = Self::df_format_arkvx(df.into())?.collect()?;
         df = Self::df_format_europe(df.into())?.collect()?;
-        df = Self::df_format_europe_arkfundsio(df.into())?.collect()?;
 
         if df.get_column_names().contains(&"market_value_($)") {
             df = df
                 .lazy()
-                .rename(
-                    vec!["market_value_($)", "weight_(%)"],
-                    vec!["market_value", "weight"],
-                )
+                .rename(vec!["market_value_($)"], vec!["market_value"])
+                .collect()?;
+        }
+        if df.get_column_names().contains(&"weight_($)") {
+            df = df
+                .lazy()
+                .rename(vec!["weight_(%)"], vec!["weight"])
                 .collect()?;
         }
         if df.get_column_names().contains(&"market value ($)") {
@@ -397,6 +399,12 @@ impl Ark {
                     vec!["market value ($)", "weight (%)"],
                     vec!["market_value", "weight"],
                 )
+                .collect()?;
+        }
+        if df.get_column_names().contains(&"weight ($)") {
+            df = df
+                .lazy()
+                .rename(vec!["weight (%)"], vec!["weight"])
                 .collect()?;
         }
 
@@ -515,13 +523,6 @@ impl Ark {
             );
         }
 
-        if df
-            .fields()
-            .contains(&Field::new("shares", DataType::Float64))
-        {
-            expressions.push(col("shares").cast(DataType::Int64));
-        }
-
         // rename values
         expressions.push(
             col("ticker")
@@ -624,7 +625,6 @@ impl Ark {
                 .rstrip(None),
         );
 
-        // run expressions
         df = df
             .lazy()
             .with_columns(expressions)
@@ -645,6 +645,32 @@ impl Ark {
                 )
                 .collect()?
         }
+
+        let mut expressions: Vec<Expr> = vec![];
+
+        if df
+            .fields()
+            .contains(&Field::new("market_value", DataType::Float64))
+        {
+            expressions.push(col("market_value").cast(DataType::Int64));
+        }
+        if df
+            .fields()
+            .contains(&Field::new("shares", DataType::Float64))
+        {
+            expressions.push(col("shares").cast(DataType::Int64));
+        }
+        if df
+            .fields()
+            .contains(&Field::new("share_price", DataType::Int64))
+        {
+            expressions.push(col("share_price").cast(DataType::Float64));
+        }
+        if df.fields().contains(&Field::new("weight", DataType::Int64)) {
+            expressions.push(col("weight").cast(DataType::Float64));
+        }
+
+        df = df.lazy().with_columns(expressions).collect()?;
 
         if df.get_column_names().contains(&"share_price") {
             df = df.select([
