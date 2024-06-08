@@ -14,6 +14,7 @@ use strum_macros::{EnumIter, EnumString};
 #[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
 pub enum Ticker {
     ARKVX,
+
     ARKF,
     ARKG,
     #[default]
@@ -21,33 +22,54 @@ pub enum Ticker {
     ARKQ,
     ARKW,
     ARKX,
+
     ARKA,
     ARKZ,
     ARKC,
     ARKD,
     ARKY,
     ARKB,
+
     PRNT,
     IZRL,
+
+    CYBR,
+    CYCL,
+    FOOD,
+    LIFE,
+    LUSA,
+    NFRA,
+    PMNT,
 }
 impl Ticker {
     pub fn value(&self) -> &str {
         match *self {
             Ticker::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
+
             Ticker::ARKF => "FINTECH_INNOVATION",
             Ticker::ARKG => "GENOMIC_REVOLUTION",
             Ticker::ARKK => "INNOVATION",
             Ticker::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
             Ticker::ARKW => "NEXT_GENERATION_INTERNET",
             Ticker::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
+
             Ticker::ARKA => "ARKA",
             Ticker::ARKZ => "ARKZ",
             Ticker::ARKC => "ARKC",
             Ticker::ARKD => "ARKD",
             Ticker::ARKY => "ARKY",
             Ticker::ARKB => "21SHARES_BITCOIN",
+
             Ticker::PRNT => "THE_3D_PRINTING",
             Ticker::IZRL => "ISRAEL_INNOVATIVE_TECHNOLOGY",
+
+            Ticker::CYBR => "cybersecurity-and-data-privacy",
+            Ticker::CYCL => "circular-economy-enablers",
+            Ticker::FOOD => "sustainable-future-of-food",
+            Ticker::LIFE => "environmental-impact-100",
+            Ticker::LUSA => "usa-environmental-impact",
+            Ticker::NFRA => "global-sustainable-infrastructure",
+            Ticker::PMNT => "digital-payments-economy",
         }
     }
 }
@@ -302,9 +324,34 @@ impl Ark {
         Ok(df.into())
     }
 
+    fn df_format_europe(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if df.get_column_names().contains(&"Currency") {
+            _ = df.drop_in_place("Currency");
+
+            df = df
+                .lazy()
+                .rename(
+                    vec!["name", "ISIN", "Weight"],
+                    vec!["company", "cusip", "weight"],
+                )
+                .with_columns([
+                    Series::new("date", [chrono::Local::now().naive_local()]).lit(),
+                    Series::new("ticker", [None::<&str>]).lit(),
+                    Series::new("market_value", [None::<i64>]).lit(),
+                    Series::new("shares", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<i64>]).lit(),
+                ])
+                .collect()?;
+        }
+        Ok(df.into())
+    }
+
     pub fn df_format(df: DF) -> Result<DF, Error> {
         let mut df = Self::df_format_21shares(df)?.collect()?;
         df = Self::df_format_arkvx(df.into())?.collect()?;
+        df = Self::df_format_europe(df.into())?.collect()?;
 
         if df.get_column_names().contains(&"market_value_($)") {
             df = df
@@ -652,8 +699,13 @@ impl Ark {
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
         let url = match self.ticker {
             self::Ticker::ARKVX => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.ticker.value()),
-            self::Ticker::ARKA | self::Ticker::ARKZ | self::Ticker::ARKC | self::Ticker::ARKD |
-            self::Ticker::ARKY => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
+
+            self::Ticker::ARKA | self::Ticker::ARKZ | self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY
+                => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
+
+            self::Ticker::CYBR | self::Ticker::CYCL | self::Ticker::FOOD | self::Ticker::LIFE | self::Ticker::LUSA | self::Ticker::NFRA | self::Ticker::PMNT
+                => format!("https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/", self.ticker.value()),
+
             _ => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
         };
         Reader::Csv.get_data_url(url)
