@@ -11,6 +11,7 @@ use std::io::Cursor;
 use std::path::Path;
 use strum_macros::{EnumIter, EnumString};
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
 pub enum Ticker {
     ARKVX,
@@ -103,6 +104,7 @@ impl DF {
         }
     }
 }
+#[allow(clippy::upper_case_acronyms)]
 trait DFS {
     fn lazy(self) -> Vec<LazyFrame>;
     fn collect(self) -> Vec<DataFrame>;
