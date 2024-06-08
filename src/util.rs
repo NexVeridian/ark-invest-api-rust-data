@@ -347,6 +347,7 @@ impl Ark {
                 ])
                 .collect()?;
         }
+
         Ok(df.into())
     }
 
@@ -666,7 +667,12 @@ impl Ark {
                 "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
                 tic, last_day
             ),
-            (tic, None, Some(Source::ArkFundsIoFull)) => format!(
+            (tic, None, Some(Source::ArkFundsIoIncremental)) => format!(
+                "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
+                tic, default_start_day
+            ),
+
+            (tic, _, Some(Source::ArkFundsIoFull)) => format!(
                 "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
                 tic, default_start_day
             ),
