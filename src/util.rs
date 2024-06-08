@@ -610,14 +610,14 @@ impl Ark {
                 ),
             },
             (self::Ticker::ARKVX, None) => {
-                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX".to_owned()
+                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start=2000-01-01".to_owned()
             }
             (tic, None) => match source {
                 Some(Source::ArkFundsIoFull) => {
-                    format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}", tic)
+                    format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from=2000-01-01", tic)
                 }
                 _ => {
-                    format!("https://api.nexveridian.com/ark_holdings?ticker={}", tic)
+                    format!("https://api.nexveridian.com/ark_holdings?ticker={}&start=2000-01-01", tic)
                 }
             },
         };
