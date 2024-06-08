@@ -28,7 +28,7 @@ pub enum Ticker {
     ARKY,
     ARKB,
     PRNT,
-    IZRL
+    IZRL,
 }
 impl Ticker {
     pub fn value(&self) -> &str {
@@ -539,9 +539,17 @@ impl Ark {
                 .str()
                 .replace(lit("Space Investment"), lit("SpaceX"), true)
                 .str()
-                .replace(lit("Space Exploration Technologies Corp"), lit("SpaceX"), true)
+                .replace(
+                    lit("Space Exploration Technologies Corp"),
+                    lit("SpaceX"),
+                    true,
+                )
                 .str()
-                .replace(lit("Space Exploration Technologies Co"), lit("SpaceX"), true)
+                .replace(
+                    lit("Space Exploration Technologies Co"),
+                    lit("SpaceX"),
+                    true,
+                )
                 .str()
                 .rstrip(None),
         );
@@ -612,14 +620,19 @@ impl Ark {
             (self::Ticker::ARKVX, None) => {
                 "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start=2000-01-01".to_owned()
             }
-            (tic, None) => match source {
-                Some(Source::ArkFundsIoFull) => {
-                    format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from=2000-01-01", tic)
+            (tic, None) => {
+                match source {
+                    Some(Source::ArkFundsIoFull) => {
+                        format!("https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from=2000-01-01", tic)
+                    }
+                    _ => {
+                        format!(
+                            "https://api.nexveridian.com/ark_holdings?ticker={}&start=2000-01-01",
+                            tic
+                        )
+                    }
                 }
-                _ => {
-                    format!("https://api.nexveridian.com/ark_holdings?ticker={}&start=2000-01-01", tic)
-                }
-            },
+            }
         };
 
         let mut df = Reader::Json.get_data_url(url)?;
