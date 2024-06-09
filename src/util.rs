@@ -11,7 +11,7 @@ use std::io::Cursor;
 use std::path::Path;
 use strum_macros::{EnumIter, EnumString};
 
-#[allow(clippy::upper_case_acronyms)]
+#[allow(clippy::upper_case_acronyms, non_camel_case_types)]
 #[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
 pub enum Ticker {
     ARKVX,
@@ -33,6 +33,10 @@ pub enum Ticker {
 
     PRNT,
     IZRL,
+
+    EUROPE_ARKI,
+    EUROPE_ARKG,
+    EUROPE_ARRK,
 
     CYBR,
     CYCL,
@@ -63,6 +67,10 @@ impl Ticker {
 
             Ticker::PRNT => "THE_3D_PRINTING",
             Ticker::IZRL => "ISRAEL_INNOVATIVE_TECHNOLOGY",
+
+            Ticker::EUROPE_ARKI => "artificial-intelligence-robotics",
+            Ticker::EUROPE_ARKG => "genomic-revolution",
+            Ticker::EUROPE_ARRK => "innovation",
 
             Ticker::CYBR => "cybersecurity-and-data-privacy",
             Ticker::CYCL => "circular-economy-enablers",
@@ -700,13 +708,21 @@ impl Ark {
     ) -> Result<DataFrame, Error> {
         let default_start_day = "2000-01-01";
         let url = match (&self.ticker, last_day, source) {
-            (self::Ticker::ARKVX, Some(last_day), _) => format!(
-                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start={}",
-                last_day
+            (
+                self::Ticker::EUROPE_ARKG | self::Ticker::EUROPE_ARKI | self::Ticker::EUROPE_ARRK,
+                Some(last_day),
+                _,
+            ) => format!(
+                "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
+                self.ticker, last_day
             ),
-            (self::Ticker::ARKVX, None, _) => format!(
-                "https://api.nexveridian.com/ark_holdings?ticker=ARKVX&start={}",
-                default_start_day
+            (
+                self::Ticker::EUROPE_ARKG | self::Ticker::EUROPE_ARKI | self::Ticker::EUROPE_ARRK,
+                None,
+                _,
+            ) => format!(
+                "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
+                self.ticker, default_start_day
             ),
 
             (tic, Some(last_day), Some(Source::ArkFundsIoIncremental)) => format!(
@@ -754,7 +770,8 @@ impl Ark {
             self::Ticker::ARKA | self::Ticker::ARKZ | self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY
                 => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
 
-            self::Ticker::CYBR | self::Ticker::CYCL | self::Ticker::FOOD | self::Ticker::LIFE | self::Ticker::LUSA | self::Ticker::NFRA | self::Ticker::PMNT
+            self::Ticker::CYBR | self::Ticker::CYCL | self::Ticker::FOOD | self::Ticker::LIFE | self::Ticker::LUSA | self::Ticker::NFRA | self::Ticker::PMNT |
+            self::Ticker::EUROPE_ARKI | self::Ticker::EUROPE_ARKG | self::Ticker::EUROPE_ARRK
                 => format!("https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/", self.ticker.value()),
 
             _ => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
