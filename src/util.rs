@@ -347,7 +347,7 @@ impl Ark {
                     vec!["company", "cusip", "weight"],
                 )
                 .with_columns([
-                    Series::new("date", [chrono::Local::now().naive_local()]).lit(),
+                    Series::new("date", [chrono::Local::now().date_naive()]).lit(),
                     Series::new("ticker", [None::<String>]).lit(),
                     Series::new("market_value", [None::<i64>]).lit(),
                     Series::new("shares", [None::<i64>]).lit(),
@@ -382,8 +382,33 @@ impl Ark {
         Ok(df.into())
     }
 
+    fn df_format_europe_csv(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if df.get_column_names().contains(&"_duplicated_0") {
+            df = df.slice(2, df.height());
+
+            df = df
+                .clone()
+                .lazy()
+                .rename(df.get_column_names(), ["company", "cusip", "weight"])
+                .with_columns([
+                    Series::new("date", [chrono::Local::now().date_naive()]).lit(),
+                    Series::new("ticker", [None::<String>]).lit(),
+                    Series::new("market_value", [None::<i64>]).lit(),
+                    Series::new("shares", [None::<i64>]).lit(),
+                    Series::new("share_price", [None::<f64>]).lit(),
+                ])
+                .collect()?;
+        }
+
+        Ok(df.into())
+    }
+
     pub fn df_format(df: DF) -> Result<DF, Error> {
-        let mut df = Self::df_format_europe_arkfundsio(df)?.collect()?;
+        let mut df = df.collect()?;
+        df = Self::df_format_europe_csv(df.into())?.collect()?;
+        df = Self::df_format_europe_arkfundsio(df.into())?.collect()?;
         df = Self::df_format_21shares(df.into())?.collect()?;
         df = Self::df_format_arkvx(df.into())?.collect()?;
         df = Self::df_format_europe(df.into())?.collect()?;
@@ -498,6 +523,13 @@ impl Ark {
                     .replace(lit("%"), lit(""), true)
                     .cast(DataType::Float64),
             );
+        }
+
+        if df.fields().contains(&Field::new(
+            "date",
+            DataType::Datetime(TimeUnit::Milliseconds, None),
+        )) {
+            expressions.push(col("date").cast(DataType::Date));
         }
 
         if df
@@ -836,7 +868,6 @@ impl Reader {
                 JsonReader::new(Cursor::new(json.to_string())).finish()?
             }
         };
-
         Ok(df)
     }
 }

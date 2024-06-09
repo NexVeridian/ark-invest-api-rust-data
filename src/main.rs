@@ -33,6 +33,10 @@ fn print_df(ticker: &Ticker, df: &DataFrame) {
 
 fn csv_merge() -> Result<(), Error> {
     for ticker in Ticker::iter() {
+        if !std::path::Path::new(&format!("./data/csv/{}", ticker)).exists() {
+            continue;
+        }
+
         let df = Ark::merge_old_csv_to_parquet(ticker, None)?
             .format()?
             .sort()?
