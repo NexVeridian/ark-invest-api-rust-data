@@ -11,6 +11,15 @@ use std::io::Cursor;
 use std::path::Path;
 use strum_macros::{EnumIter, EnumString};
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum DataSource {
+    ArkVenture,
+    Ark,
+    Shares21,
+    ArkEurope,
+    Rize,
+}
+
 #[allow(clippy::upper_case_acronyms, non_camel_case_types)]
 #[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
 pub enum Ticker {
@@ -79,6 +88,40 @@ impl Ticker {
             Ticker::LUSA => "usa-environmental-impact",
             Ticker::NFRA => "global-sustainable-infrastructure",
             Ticker::PMNT => "digital-payments-economy",
+        }
+    }
+
+    pub fn data_source(&self) -> DataSource {
+        match *self {
+            Ticker::ARKVX => DataSource::ArkVenture,
+
+            Ticker::ARKF
+            | Ticker::ARKG
+            | Ticker::ARKK
+            | Ticker::ARKQ
+            | Ticker::ARKW
+            | Ticker::ARKX => DataSource::Ark,
+
+            Ticker::ARKA
+            | Ticker::ARKZ
+            | Ticker::ARKC
+            | Ticker::ARKD
+            | Ticker::ARKY
+            | Ticker::ARKB => DataSource::Shares21,
+
+            Ticker::PRNT | Ticker::IZRL => DataSource::Ark,
+
+            Ticker::EUROPE_ARKI | Ticker::EUROPE_ARKG | Ticker::EUROPE_ARRK => {
+                DataSource::ArkEurope
+            }
+
+            Ticker::CYBR
+            | Ticker::CYCL
+            | Ticker::FOOD
+            | Ticker::LIFE
+            | Ticker::LUSA
+            | Ticker::NFRA
+            | Ticker::PMNT => DataSource::Rize,
         }
     }
 }
@@ -739,45 +782,38 @@ impl Ark {
         source: Option<&Source>,
     ) -> Result<DataFrame, Error> {
         let default_start_day = "2000-01-01";
-        let url = match (&self.ticker, last_day, source) {
-            (
-                self::Ticker::EUROPE_ARKG | self::Ticker::EUROPE_ARKI | self::Ticker::EUROPE_ARRK,
-                Some(last_day),
-                _,
-            ) => format!(
+        let url = match (self.ticker.data_source(), last_day, source) {
+            (DataSource::ArkEurope, Some(last_day), _) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
                 self.ticker, last_day
             ),
-            (
-                self::Ticker::EUROPE_ARKG | self::Ticker::EUROPE_ARKI | self::Ticker::EUROPE_ARRK,
-                None,
-                _,
-            ) => format!(
+            (DataSource::ArkEurope, None, _) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
                 self.ticker, default_start_day
             ),
 
-            (tic, Some(last_day), Some(Source::ArkFundsIoIncremental)) => format!(
+            // arkfunds.io
+            (_, Some(last_day), Some(Source::ArkFundsIoIncremental)) => format!(
                 "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
-                tic, last_day
+                self.ticker, last_day
             ),
-            (tic, None, Some(Source::ArkFundsIoIncremental)) => format!(
+            (_, None, Some(Source::ArkFundsIoIncremental)) => format!(
                 "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
-                tic, default_start_day
+                self.ticker, default_start_day
+            ),
+            (_, _, Some(Source::ArkFundsIoFull)) => format!(
+                "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
+                self.ticker, default_start_day
             ),
 
-            (tic, _, Some(Source::ArkFundsIoFull)) => format!(
-                "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
-                tic, default_start_day
-            ),
-
-            (tic, Some(last_day), _) => format!(
+            // api.nexveridian.com
+            (_, Some(last_day), _) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
-                tic, last_day
+                self.ticker, last_day
             ),
-            (tic, None, _) => format!(
+            (_, None, _) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
-                tic, default_start_day
+                self.ticker, default_start_day
             ),
         };
 
@@ -796,17 +832,11 @@ impl Ark {
     }
 
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
-        let url = match self.ticker {
-            self::Ticker::ARKVX => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.ticker.value()),
-
-            self::Ticker::ARKA | self::Ticker::ARKZ | self::Ticker::ARKC | self::Ticker::ARKD | self::Ticker::ARKY
-                => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
-
-            self::Ticker::CYBR | self::Ticker::CYCL | self::Ticker::FOOD | self::Ticker::LIFE | self::Ticker::LUSA | self::Ticker::NFRA | self::Ticker::PMNT |
-            self::Ticker::EUROPE_ARKI | self::Ticker::EUROPE_ARKG | self::Ticker::EUROPE_ARRK
-                => format!("https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/", self.ticker.value()),
-
-            _ => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
+        let url = match self.ticker.data_source() {
+            DataSource::ArkVenture => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.ticker.value()),
+            DataSource::Ark => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
+            DataSource::Shares21 => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
+            DataSource::ArkEurope | DataSource::Rize => format!("https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/", self.ticker.value()),
         };
         Reader::Csv.get_data_url(url)
     }
