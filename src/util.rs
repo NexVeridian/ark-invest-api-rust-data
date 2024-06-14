@@ -45,7 +45,7 @@ pub enum Ticker {
 
     EUROPE_ARKI,
     EUROPE_ARKG,
-    EUROPE_ARRK,
+    EUROPE_ARKK,
 
     CYBR,
     CYCL,
@@ -79,7 +79,7 @@ impl Ticker {
 
             Ticker::EUROPE_ARKI => "artificial-intelligence-robotics",
             Ticker::EUROPE_ARKG => "genomic-revolution",
-            Ticker::EUROPE_ARRK => "innovation",
+            Ticker::EUROPE_ARKK => "innovation",
 
             Ticker::CYBR => "cybersecurity-and-data-privacy",
             Ticker::CYCL => "circular-economy-enablers",
@@ -111,7 +111,7 @@ impl Ticker {
 
             Ticker::PRNT | Ticker::IZRL => DataSource::Ark,
 
-            Ticker::EUROPE_ARKI | Ticker::EUROPE_ARKG | Ticker::EUROPE_ARRK => {
+            Ticker::EUROPE_ARKI | Ticker::EUROPE_ARKG | Ticker::EUROPE_ARKK => {
                 DataSource::ArkEurope
             }
 
