@@ -12,6 +12,7 @@ use tokio::task;
 use tokio::time::Duration;
 
 mod util;
+use util::ticker::Ticker;
 use util::*;
 
 lazy_static! {

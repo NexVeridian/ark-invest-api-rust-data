@@ -1,8 +1,10 @@
 use anyhow::{Error, Result};
-use ark_invest_api_rust_data::util::*;
 use chrono::NaiveDate;
 use polars::datatypes::DataType;
 use serial_test::serial;
+
+use ark_invest_api_rust_data::util::ticker::Ticker;
+use ark_invest_api_rust_data::util::*;
 
 #[test]
 #[serial]
