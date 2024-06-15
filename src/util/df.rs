@@ -35,7 +35,7 @@ impl DF {
     }
 }
 
-#[allow(clippy::upper_case_acronyms)]
+#[allow(clippy::upper_case_acronyms, dead_code)]
 pub trait DFS {
     fn lazy(self) -> Vec<LazyFrame>;
     fn collect(self) -> Vec<DataFrame>;
