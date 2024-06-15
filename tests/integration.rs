@@ -46,7 +46,7 @@ fn get_api_format_arkk() -> Result<(), Error> {
         Some("data/test".to_owned()),
     )?
     .get_api(NaiveDate::from_ymd_opt(2023, 5, 18), None)?;
-    let df = Ark::df_format(dfl.into())?.collect()?;
+    let df = Ark::df_format(dfl.into(), None)?.collect()?;
 
     assert_eq!(
         (df.get_column_names(), df.dtypes(), df.shape().1 > 1),
@@ -86,7 +86,7 @@ fn get_api_format_arkvx() -> Result<(), Error> {
         Some("data/test".to_owned()),
     )?
     .get_api(NaiveDate::from_ymd_opt(2023, 1, 1), None)?;
-    let df = Ark::df_format(dfl.into())?.collect()?;
+    let df = Ark::df_format(dfl.into(), None)?.collect()?;
 
     assert_eq!(
         (df.get_column_names(), df.dtypes(), df.shape().1 > 1),
