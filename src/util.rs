@@ -679,12 +679,7 @@ impl Ark {
     }
 
     pub fn get_csv_ark(&self) -> Result<DataFrame, Error> {
-        let url = match self.ticker.data_source() {
-            DataSource::ArkVenture => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.ticker.value()),
-            DataSource::Ark => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.ticker.value(), self.ticker),
-            DataSource::Shares21 => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.ticker.value()),
-            DataSource::ArkEurope | DataSource::Rize => format!("https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/", self.ticker.value()),
-        };
+        let url = self.ticker.get_url();
         Reader::Csv.get_data_url(url)
     }
 
@@ -752,6 +747,7 @@ impl Reader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
     use serial_test::serial;
     use std::fs;
 

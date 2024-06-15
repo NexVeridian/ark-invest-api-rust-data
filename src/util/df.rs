@@ -1,6 +1,6 @@
+use anyhow::Error;
 use polars::frame::DataFrame;
 use polars::prelude::{IntoLazy, LazyFrame};
-use anyhow::Error;
 
 #[derive(Clone)]
 pub enum DF {
