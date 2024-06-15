@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Error, Result};
 use chrono::{Duration, NaiveDate};
+use df::{DF, DFS};
 use glob::glob;
 use polars::datatypes::DataType;
 use polars::lazy::dsl::StrptimeOptions;
@@ -9,165 +10,11 @@ use serde_json::Value;
 use std::fs::{create_dir_all, File};
 use std::io::Cursor;
 use std::path::Path;
-use strum_macros::{EnumIter, EnumString};
+use strum_macros::EnumString;
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum DataSource {
-    ArkVenture,
-    Ark,
-    Shares21,
-    ArkEurope,
-    Rize,
-}
-
-#[allow(clippy::upper_case_acronyms, non_camel_case_types)]
-#[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
-pub enum Ticker {
-    ARKVX,
-
-    ARKF,
-    ARKG,
-    #[default]
-    ARKK,
-    ARKQ,
-    ARKW,
-    ARKX,
-
-    ARKA,
-    ARKZ,
-    ARKC,
-    ARKD,
-    ARKY,
-    ARKB,
-
-    PRNT,
-    IZRL,
-
-    EUROPE_ARKI,
-    EUROPE_ARKG,
-    EUROPE_ARKK,
-
-    CYBR,
-    CYCL,
-    FOOD,
-    LIFE,
-    LUSA,
-    NFRA,
-    PMNT,
-}
-impl Ticker {
-    pub fn value(&self) -> &str {
-        match *self {
-            Ticker::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
-
-            Ticker::ARKF => "FINTECH_INNOVATION",
-            Ticker::ARKG => "GENOMIC_REVOLUTION",
-            Ticker::ARKK => "INNOVATION",
-            Ticker::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
-            Ticker::ARKW => "NEXT_GENERATION_INTERNET",
-            Ticker::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
-
-            Ticker::ARKA => "ARKA",
-            Ticker::ARKZ => "ARKZ",
-            Ticker::ARKC => "ARKC",
-            Ticker::ARKD => "ARKD",
-            Ticker::ARKY => "ARKY",
-            Ticker::ARKB => "21SHARES_BITCOIN",
-
-            Ticker::PRNT => "THE_3D_PRINTING",
-            Ticker::IZRL => "ISRAEL_INNOVATIVE_TECHNOLOGY",
-
-            Ticker::EUROPE_ARKI => "artificial-intelligence-robotics",
-            Ticker::EUROPE_ARKG => "genomic-revolution",
-            Ticker::EUROPE_ARKK => "innovation",
-
-            Ticker::CYBR => "cybersecurity-and-data-privacy",
-            Ticker::CYCL => "circular-economy-enablers",
-            Ticker::FOOD => "sustainable-future-of-food",
-            Ticker::LIFE => "environmental-impact-100",
-            Ticker::LUSA => "usa-environmental-impact",
-            Ticker::NFRA => "global-sustainable-infrastructure",
-            Ticker::PMNT => "digital-payments-economy",
-        }
-    }
-
-    pub fn data_source(&self) -> DataSource {
-        match *self {
-            Ticker::ARKVX => DataSource::ArkVenture,
-
-            Ticker::ARKF
-            | Ticker::ARKG
-            | Ticker::ARKK
-            | Ticker::ARKQ
-            | Ticker::ARKW
-            | Ticker::ARKX => DataSource::Ark,
-
-            Ticker::ARKA
-            | Ticker::ARKZ
-            | Ticker::ARKC
-            | Ticker::ARKD
-            | Ticker::ARKY
-            | Ticker::ARKB => DataSource::Shares21,
-
-            Ticker::PRNT | Ticker::IZRL => DataSource::Ark,
-
-            Ticker::EUROPE_ARKI | Ticker::EUROPE_ARKG | Ticker::EUROPE_ARKK => {
-                DataSource::ArkEurope
-            }
-
-            Ticker::CYBR
-            | Ticker::CYCL
-            | Ticker::FOOD
-            | Ticker::LIFE
-            | Ticker::LUSA
-            | Ticker::NFRA
-            | Ticker::PMNT => DataSource::Rize,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub enum DF {
-    LazyFrame(LazyFrame),
-    DataFrame(DataFrame),
-}
-impl From<LazyFrame> for DF {
-    fn from(lf: LazyFrame) -> Self {
-        DF::LazyFrame(lf)
-    }
-}
-impl From<DataFrame> for DF {
-    fn from(df: DataFrame) -> Self {
-        DF::DataFrame(df)
-    }
-}
-impl DF {
-    pub fn collect(self) -> Result<DataFrame, Error> {
-        match self {
-            DF::LazyFrame(x) => Ok(x.collect()?),
-            DF::DataFrame(x) => Ok(x),
-        }
-    }
-    pub fn lazy(self) -> LazyFrame {
-        match self {
-            DF::LazyFrame(x) => x,
-            DF::DataFrame(x) => x.lazy(),
-        }
-    }
-}
-#[allow(clippy::upper_case_acronyms)]
-trait DFS {
-    fn lazy(self) -> Vec<LazyFrame>;
-    fn collect(self) -> Vec<DataFrame>;
-}
-impl DFS for Vec<DF> {
-    fn lazy(self) -> Vec<LazyFrame> {
-        self.into_iter().map(|df| df.lazy()).collect()
-    }
-    fn collect(self) -> Vec<DataFrame> {
-        self.into_iter().map(|df| df.collect().unwrap()).collect()
-    }
-}
+use ticker::{DataSource, Ticker};
+pub mod df;
+pub mod ticker;
 
 #[derive(Debug, Default, EnumString, Clone, Copy, PartialEq)]
 pub enum Source {
