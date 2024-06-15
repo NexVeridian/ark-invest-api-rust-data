@@ -69,11 +69,11 @@ impl Ark {
         if let Some(update) = update {
             if existing_file {
                 ark.df = Self::concat_df(vec![
-                    Self::df_format(ark.df)?,
-                    Self::df_format(update.into())?,
+                    Self::df_format(ark.df, None)?,
+                    Self::df_format(update.into(), None)?,
                 ])?;
             } else {
-                ark.df = Self::df_format(update.into())?;
+                ark.df = Self::df_format(update.into(), None)?;
             }
         }
 
@@ -150,17 +150,25 @@ impl Ark {
     }
 
     pub fn format(mut self) -> Result<Self, Error> {
-        self.df = Self::df_format(self.df)?;
+        // self.df = Self::df_format(self.df, Some(self.ticker.data_source()))?;
+        self.df = Self::df_format(self.df, None)?;
         Ok(self)
     }
 
-    pub fn df_format(df: DF) -> Result<DF, Error> {
+    pub fn df_format(df: DF, data_source: Option<DataSource>) -> Result<DF, Error> {
         let mut df = df.collect()?;
-        df = df_format::df_format_europe_csv(df.into())?.collect()?;
-        df = df_format::df_format_europe_arkfundsio(df.into())?.collect()?;
-        df = df_format::df_format_21shares(df.into())?.collect()?;
-        df = df_format::df_format_arkvx(df.into())?.collect()?;
-        df = df_format::df_format_europe(df.into())?.collect()?;
+        match data_source {
+            Some(ds) => {
+                df = df_format::df_format(ds, df.into())?.collect()?;
+            }
+            None => {
+                df = df_format::df_format_europe_csv(df.into())?.collect()?;
+                df = df_format::df_format_europe_arkfundsio(df.into())?.collect()?;
+                df = df_format::df_format_21shares(df.into())?.collect()?;
+                df = df_format::df_format_arkvx(df.into())?.collect()?;
+                df = df_format::df_format_europe(df.into())?.collect()?;
+            }
+        }
 
         if df.get_column_names().contains(&"market_value_($)") {
             df = df
@@ -325,6 +333,8 @@ impl Ark {
                 .replace_all(lit(" UN"), lit(""), true)
                 .str()
                 .replace_all(lit(" UW"), lit(""), true)
+                .str()
+                .replace_all(lit("/U"), lit(""), true)
                 .str()
                 .replace_all(lit(" CN"), lit(""), true)
                 .str()
@@ -558,8 +568,11 @@ impl Ark {
 
         if Self::read_parquet(&ticker, path.as_ref()).is_ok() {
             let df_old = Self::read_parquet(&ticker, path.as_ref())?;
-            df = Self::concat_df(vec![Self::df_format(df_old)?, Self::df_format(df)?])?;
-            df = Self::df_format(df)?;
+            df = Self::concat_df(vec![
+                Self::df_format(df_old, None)?,
+                Self::df_format(df, None)?,
+            ])?;
+            df = Self::df_format(df, None)?;
         }
         Ok(Self { df, ticker, path })
     }
@@ -612,7 +625,7 @@ mod tests {
         let read = Ark::new(Source::Read, Ticker::ARKW, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKW.parquet")?;
 
-        let df = Ark::df_format(read.into())?.collect()?;
+        let df = Ark::df_format(read.into(), None)?.collect()?;
         assert_eq!(
             df,
             df![
@@ -648,7 +661,7 @@ mod tests {
         let read = Ark::new(Source::Read, Ticker::ARKF, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKF.parquet")?;
 
-        let df = Ark::df_format(read.into())?.collect()?;
+        let df = Ark::df_format(read.into(), None)?.collect()?;
         assert_eq!(
             df,
             df![

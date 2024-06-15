@@ -1,7 +1,21 @@
 use anyhow::{Error, Result};
 use polars::prelude::*;
 
-use crate::util::df::DF;
+use crate::{ticker::DataSource, util::df::DF};
+
+pub fn df_format(data_source: DataSource, mut df: DF) -> Result<DF, Error> {
+    let df = match data_source {
+        DataSource::ArkVenture => df_format_arkvx(df)?,
+        DataSource::Ark => df,
+        DataSource::Shares21 => df_format_21shares(df)?,
+        DataSource::ArkEurope | DataSource::Rize => {
+            df = df_format_europe_csv(df)?;
+            df = df_format_europe_arkfundsio(df)?;
+            df_format_europe(df)?
+        }
+    };
+    Ok(df)
+}
 
 pub fn df_format_21shares(df: DF) -> Result<DF, Error> {
     let mut df = df.collect()?;
