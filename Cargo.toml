@@ -15,7 +15,7 @@ polars = { version = "0.32", features = [
 	"object",
 	"dtype-struct",
 ] }
-reqwest = { version = "0.11", features = ["blocking", "gzip"] }
+reqwest = { version = "0.12", features = ["blocking", "gzip"] }
 glob = { version = "0.3" }
 clokwerk = "0.4"
 strum_macros = "0.26"
@@ -30,6 +30,6 @@ lazy_static = "1.4"
 anyhow = "1.0"
 
 [dev-dependencies]
-serial_test = "*"
-rstest = "0.21"
+serial_test = "3.1"
+rstest = "0.23"
 pretty_assertions = "1.4"

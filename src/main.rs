@@ -1,4 +1,5 @@
 use anyhow::{Error, Result};
+use ark_invest_api_rust_data::{util::ticker::Ticker, *};
 use clokwerk::{AsyncScheduler, Job, TimeUnits};
 use futures::future::join_all;
 use lazy_static::lazy_static;
@@ -10,10 +11,6 @@ use std::thread;
 use strum::IntoEnumIterator;
 use tokio::task;
 use tokio::time::Duration;
-
-mod util;
-use util::ticker::Ticker;
-use util::*;
 
 lazy_static! {
     static ref SOURCE: Source = match env::var("ARK_SOURCE") {

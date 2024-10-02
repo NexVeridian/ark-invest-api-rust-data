@@ -1,6 +1,5 @@
 # Contributing code
-- Make sure the test pass
-- Run `cargo clippy --fix --allow-dirty`
+- Run `make precommit`
 
 # Dev Install
 ## Dev Containers

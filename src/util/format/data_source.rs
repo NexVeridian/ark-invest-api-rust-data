@@ -3,7 +3,7 @@ use polars::prelude::*;
 
 use crate::{ticker::DataSource, util::df::DF};
 
-pub fn df_format(data_source: DataSource, mut df: DF) -> Result<DF, Error> {
+pub fn data_source(data_source: DataSource, mut df: DF) -> Result<DF, Error> {
     let df = match data_source {
         DataSource::ArkVenture => df_format_arkvx(df)?,
         DataSource::Ark => df,

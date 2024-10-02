@@ -13,7 +13,7 @@ use strum_macros::EnumString;
 use ticker::{DataSource, Ticker};
 pub mod data_reader;
 pub mod df;
-mod df_format;
+mod format;
 pub mod ticker;
 
 #[derive(Debug, Default, EnumString, Clone, Copy, PartialEq)]
@@ -159,14 +159,14 @@ impl Ark {
         let mut df = df.collect()?;
         match data_source {
             Some(ds) => {
-                df = df_format::df_format(ds, df.into())?.collect()?;
+                df = format::data_source(ds, df.into())?.collect()?;
             }
             None => {
-                df = df_format::df_format_europe_csv(df.into())?.collect()?;
-                df = df_format::df_format_europe_arkfundsio(df.into())?.collect()?;
-                df = df_format::df_format_21shares(df.into())?.collect()?;
-                df = df_format::df_format_arkvx(df.into())?.collect()?;
-                df = df_format::df_format_europe(df.into())?.collect()?;
+                df = format::df_format_europe_csv(df.into())?.collect()?;
+                df = format::df_format_europe_arkfundsio(df.into())?.collect()?;
+                df = format::df_format_21shares(df.into())?.collect()?;
+                df = format::df_format_arkvx(df.into())?.collect()?;
+                df = format::df_format_europe(df.into())?.collect()?;
             }
         }
 
@@ -242,34 +242,7 @@ impl Ark {
             }
         }
 
-        // format arkw, ARK BITCOIN ETF HOLDCO (ARKW) to ARKB
-        if let Ok(x) = df
-            .clone()
-            .lazy()
-            .with_columns(vec![
-                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKW)")))
-                    .then(lit("ARKB"))
-                    .otherwise(col("ticker"))
-                    .alias("ticker"),
-                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKW)")))
-                    .then(lit("ARKB"))
-                    .otherwise(col("company"))
-                    .alias("company"),
-            ])
-            .with_columns(vec![
-                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKF)")))
-                    .then(lit("ARKB"))
-                    .otherwise(col("ticker"))
-                    .alias("ticker"),
-                when(col("company").eq(lit("ARK BITCOIN ETF HOLDCO (ARKF)")))
-                    .then(lit("ARKB"))
-                    .otherwise(col("company"))
-                    .alias("company"),
-            ])
-            .collect()
-        {
-            df = x;
-        }
+        df = format::Ticker::all(df.into())?.collect()?;
 
         let mut expressions: Vec<Expr> = vec![];
 
@@ -581,6 +554,7 @@ impl Ark {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::*;
     use pretty_assertions::assert_eq;
     use serial_test::serial;
     use std::fs;
@@ -588,16 +562,7 @@ mod tests {
     #[test]
     #[serial]
     fn read_write_parquet() -> Result<(), Error> {
-        let test_df = df![
-            "date" => ["2023-01-01"],
-            "ticker" => ["TSLA"],
-            "cusip" => ["123abc"],
-            "company" => ["Tesla"],
-            "market_value" => [100],
-            "shares" => [10],
-            "share_price" => [10],
-            "weight" => [10.00]
-        ]?;
+        let test_df = defualt_df(&[Some("COIN")], &[Some("COINBASE")])?;
 
         Ark::write_df_parquet("data/test/ARKK.parquet".into(), test_df.clone().into())?;
         let read = Ark::new(Source::Read, Ticker::ARKK, Some("data/test".to_owned()))?.collect()?;
@@ -610,16 +575,14 @@ mod tests {
     #[test]
     #[serial]
     fn arkw_format_arkb() -> Result<(), Error> {
-        let test_df = df![
-            "date" => ["2024-01-01", "2024-01-02"],
-            "ticker" => [None::<&str>, Some("TSLA")],
-            "cusip" => ["123abc", "TESLA"],
-            "company" => ["ARK BITCOIN ETF HOLDCO (ARKW)", "TESLA"],
-            "market_value" => [100, 400],
-            "shares" => [10, 20],
-            "share_price" => [10, 20],
-            "weight" => [10.00, 20.00]
-        ]?;
+        let test_df = defualt_df(
+            &[None::<&str>, Some("ARKB"), Some("ARKB")],
+            &[
+                Some("ARK BITCOIN ETF HOLDCO (ARKW)"),
+                Some("ARK BITCOIN ETF HOLDCO (ARKW)"),
+                Some("ARKB"),
+            ],
+        )?;
 
         Ark::write_df_parquet("data/test/ARKW.parquet".into(), test_df.clone().into())?;
         let read = Ark::new(Source::Read, Ticker::ARKW, Some("data/test".to_owned()))?.collect()?;
@@ -628,16 +591,10 @@ mod tests {
         let df = Ark::df_format(read.into(), None)?.collect()?;
         assert_eq!(
             df,
-            df![
-                "date" => ["2024-01-01", "2024-01-02"],
-                "ticker" => ["ARKB", "TSLA"],
-                "cusip" => ["123abc", "TESLA"],
-                "company" => ["ARKB", "TESLA"],
-                "market_value" => [100, 400],
-                "shares" => [10, 20],
-                "share_price" => [10, 20],
-                "weight" => [10.00, 20.00]
-            ]?
+            defualt_df(
+                &[Some("ARKB"), Some("ARKB"), Some("ARKB")],
+                &[Some("ARKB"), Some("ARKB"), Some("ARKB")]
+            )?,
         );
 
         Ok(())
@@ -646,17 +603,14 @@ mod tests {
     #[test]
     #[serial]
     fn arkf_format_arkb() -> Result<(), Error> {
-        let test_df = df![
-            "date" => ["2024-01-01", "2024-01-02"],
-            "ticker" => [None::<&str>, Some("TSLA")],
-            "cusip" => ["123abc", "TESLA"],
-            "company" => ["ARK BITCOIN ETF HOLDCO (ARKF)", "TESLA"],
-            "market_value" => [100, 400],
-            "shares" => [10, 20],
-            "share_price" => [10, 20],
-            "weight" => [10.00, 20.00]
-        ]?;
-
+        let test_df = defualt_df(
+            &[None::<&str>, Some("ARKB"), Some("ARKB")],
+            &[
+                Some("ARK BITCOIN ETF HOLDCO (ARKF)"),
+                Some("ARK BITCOIN ETF HOLDCO (ARKF)"),
+                Some("ARKB"),
+            ],
+        )?;
         Ark::write_df_parquet("data/test/ARKF.parquet".into(), test_df.clone().into())?;
         let read = Ark::new(Source::Read, Ticker::ARKF, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKF.parquet")?;
@@ -664,16 +618,10 @@ mod tests {
         let df = Ark::df_format(read.into(), None)?.collect()?;
         assert_eq!(
             df,
-            df![
-                "date" => ["2024-01-01", "2024-01-02"],
-                "ticker" => ["ARKB", "TSLA"],
-                "cusip" => ["123abc", "TESLA"],
-                "company" => ["ARKB", "TESLA"],
-                "market_value" => [100, 400],
-                "shares" => [10, 20],
-                "share_price" => [10, 20],
-                "weight" => [10.00, 20.00]
-            ]?
+            defualt_df(
+                &[Some("ARKB"), Some("ARKB"), Some("ARKB")],
+                &[Some("ARKB"), Some("ARKB"), Some("ARKB")]
+            )?,
         );
 
         Ok(())
