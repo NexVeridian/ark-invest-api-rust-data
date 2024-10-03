@@ -85,7 +85,7 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("ticker").eq(lit("MARKFORGEDG")))
+            .with_columns(vec![when(col("company").eq(lit("MARKFORGEDG")))
                 .then(lit("MKFG"))
                 .otherwise(col("ticker"))
                 .alias("ticker")])
@@ -106,14 +106,19 @@ impl Ticker {
             .with_columns(Self::get_expr(
                 "company",
                 "Cash & Cash Equivalents",
-                "CASH USD",
+                "CASH_USD",
+            ))
+            .with_columns(Self::get_expr(
+                "company",
+                "CASH & CASH EQUIVALENTS",
+                "CASH_USD",
             ))
             .with_columns(Self::get_expr(
                 "company",
                 "GOLDMAN FS TRSY OBLIG INST 468",
-                "CASH USD",
+                "CASH_USD",
             ))
-            .with_columns(Self::get_expr("company", "Cash & Other", "CASH USD"))
+            .with_columns(Self::get_expr("company", "Cash & Other", "CASH_USD"))
             .collect()
         {
             df = x;
@@ -134,7 +139,7 @@ mod tests {
     #[case::mkfg(
 		Ticker::MKFG,
 		defualt_df(
-            &[Some("MKFG"), Some("MARKFORGEDG")],
+            &[Some("MKFG"), None::<&str>],
             &[Some("MARKFORGEDG"), Some("MARKFORGEDG")],
         )?,
 		defualt_df(
@@ -161,12 +166,12 @@ mod tests {
     #[case::cash_usd(
 		Ticker::CASH_USD,
 		defualt_df(
-			&[None::<&str>, None::<&str>, Some("CASH&Other")],
-			&[Some("Cash & Cash Equivalents"), Some("GOLDMAN FS TRSY OBLIG INST 468"), Some("Cash & Other")],
+			&[None::<&str>, None::<&str>, None::<&str>, Some("CASH&Other")],
+			&[Some("Cash & Cash Equivalents"), Some("CASH & CASH EQUIVALENTS"), Some("GOLDMAN FS TRSY OBLIG INST 468"), Some("Cash & Other")],
 		)?,
 		defualt_df(
-			&[Some("CASH USD"), Some("CASH USD"), Some("CASH USD")],
-			&[Some("CASH USD"), Some("CASH USD"), Some("CASH USD")],
+			&[Some("CASH_USD"), Some("CASH_USD"), Some("CASH_USD"), Some("CASH_USD")],
+			&[Some("CASH_USD"), Some("CASH_USD"), Some("CASH_USD"), Some("CASH_USD")],
 		)?,
 	)]
     fn matrix(
