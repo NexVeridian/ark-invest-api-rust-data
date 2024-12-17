@@ -1,5 +1,4 @@
 precommit:
-	rustup update
 	cargo update
 	cargo check
 	cargo fmt
