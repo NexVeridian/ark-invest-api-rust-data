@@ -586,11 +586,9 @@ mod tests {
     use super::*;
     use crate::test_utils::*;
     use pretty_assertions::assert_eq;
-    use serial_test::serial;
     use std::fs;
 
     #[test]
-    #[serial]
     fn read_write_parquet() -> Result<(), Error> {
         let test_df = defualt_df(&[Some("COIN")], &[Some("COINBASE")])?;
 
@@ -603,7 +601,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn arkw_format_arkb() -> Result<(), Error> {
         let test_df = defualt_df(
             &[None::<&str>, Some("ARKB"), Some("ARKB")],
@@ -631,7 +628,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn arkf_format_arkb() -> Result<(), Error> {
         let test_df = defualt_df(
             &[None::<&str>, Some("ARKB"), Some("ARKB")],

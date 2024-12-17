@@ -2,13 +2,11 @@ use anyhow::{Error, Result};
 use chrono::NaiveDate;
 use polars::datatypes::DataType;
 use pretty_assertions::assert_eq;
-use serial_test::serial;
 
 use ark_invest_api_rust_data::util::ticker::Ticker;
 use ark_invest_api_rust_data::util::*;
 
 #[test]
-#[serial]
 fn get_api_arkk() -> Result<(), Error> {
     let df = Ark::new(
         Source::ApiIncremental,
@@ -38,7 +36,6 @@ fn get_api_arkk() -> Result<(), Error> {
 }
 
 #[test]
-#[serial]
 fn get_api_format_arkk() -> Result<(), Error> {
     let dfl = Ark::new(
         Source::ApiIncremental,
@@ -78,7 +75,6 @@ fn get_api_format_arkk() -> Result<(), Error> {
 }
 
 #[test]
-#[serial]
 fn get_api_format_arkvx() -> Result<(), Error> {
     let dfl = Ark::new(
         Source::ApiIncremental,
