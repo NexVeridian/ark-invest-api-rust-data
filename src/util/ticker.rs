@@ -1,6 +1,6 @@
 use strum_macros::EnumIter;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum DataSource {
     ArkVenture,
     Ark,
@@ -10,7 +10,7 @@ pub enum DataSource {
 }
 
 #[allow(clippy::upper_case_acronyms, non_camel_case_types)]
-#[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, strum_macros::Display, EnumIter, Clone, Copy, PartialEq, Eq)]
 pub enum Ticker {
     ARKVX,
 
@@ -46,72 +46,64 @@ pub enum Ticker {
 }
 
 impl Ticker {
-    pub fn value(&self) -> &str {
+    pub const fn value(&self) -> &str {
         match *self {
-            Ticker::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
+            Self::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
 
-            Ticker::ARKF => "FINTECH_INNOVATION",
-            Ticker::ARKG => "GENOMIC_REVOLUTION",
-            Ticker::ARKK => "INNOVATION",
-            Ticker::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
-            Ticker::ARKW => "NEXT_GENERATION_INTERNET",
-            Ticker::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
+            Self::ARKF => "FINTECH_INNOVATION",
+            Self::ARKG => "GENOMIC_REVOLUTION",
+            Self::ARKK => "INNOVATION",
+            Self::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
+            Self::ARKW => "NEXT_GENERATION_INTERNET",
+            Self::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
 
-            Ticker::ARKA => "ARKA",
-            Ticker::ARKZ => "ARKZ",
-            Ticker::ARKC => "ARKC",
-            Ticker::ARKD => "ARKD",
-            Ticker::ARKY => "ARKY",
-            Ticker::ARKB => "21SHARES_BITCOIN",
+            Self::ARKA => "ARKA",
+            Self::ARKZ => "ARKZ",
+            Self::ARKC => "ARKC",
+            Self::ARKD => "ARKD",
+            Self::ARKY => "ARKY",
+            Self::ARKB => "21SHARES_BITCOIN",
 
-            Ticker::PRNT => "THE_3D_PRINTING",
-            Ticker::IZRL => "ISRAEL_INNOVATIVE_TECHNOLOGY",
+            Self::PRNT => "THE_3D_PRINTING",
+            Self::IZRL => "ISRAEL_INNOVATIVE_TECHNOLOGY",
 
-            Ticker::EUROPE_ARKI => "artificial-intelligence-robotics",
-            Ticker::EUROPE_ARKG => "genomic-revolution",
-            Ticker::EUROPE_ARKK => "innovation",
+            Self::EUROPE_ARKI => "artificial-intelligence-robotics",
+            Self::EUROPE_ARKG => "genomic-revolution",
+            Self::EUROPE_ARKK => "innovation",
 
-            Ticker::CYBR => "cybersecurity-and-data-privacy",
-            Ticker::CYCL => "circular-economy-enablers",
-            Ticker::FOOD => "sustainable-future-of-food",
-            Ticker::LIFE => "environmental-impact-100",
-            Ticker::LUSA => "usa-environmental-impact",
-            Ticker::NFRA => "global-sustainable-infrastructure",
-            Ticker::PMNT => "digital-payments-economy",
+            Self::CYBR => "cybersecurity-and-data-privacy",
+            Self::CYCL => "circular-economy-enablers",
+            Self::FOOD => "sustainable-future-of-food",
+            Self::LIFE => "environmental-impact-100",
+            Self::LUSA => "usa-environmental-impact",
+            Self::NFRA => "global-sustainable-infrastructure",
+            Self::PMNT => "digital-payments-economy",
         }
     }
 
-    pub fn data_source(&self) -> DataSource {
+    pub const fn data_source(&self) -> DataSource {
         match *self {
-            Ticker::ARKVX => DataSource::ArkVenture,
+            Self::ARKVX => DataSource::ArkVenture,
 
-            Ticker::ARKF
-            | Ticker::ARKG
-            | Ticker::ARKK
-            | Ticker::ARKQ
-            | Ticker::ARKW
-            | Ticker::ARKX => DataSource::Ark,
-
-            Ticker::ARKA
-            | Ticker::ARKZ
-            | Ticker::ARKC
-            | Ticker::ARKD
-            | Ticker::ARKY
-            | Ticker::ARKB => DataSource::Shares21,
-
-            Ticker::PRNT | Ticker::IZRL => DataSource::Ark,
-
-            Ticker::EUROPE_ARKI | Ticker::EUROPE_ARKG | Ticker::EUROPE_ARKK => {
-                DataSource::ArkEurope
+            Self::ARKF | Self::ARKG | Self::ARKK | Self::ARKQ | Self::ARKW | Self::ARKX => {
+                DataSource::Ark
             }
 
-            Ticker::CYBR
-            | Ticker::CYCL
-            | Ticker::FOOD
-            | Ticker::LIFE
-            | Ticker::LUSA
-            | Ticker::NFRA
-            | Ticker::PMNT => DataSource::Rize,
+            Self::ARKA | Self::ARKZ | Self::ARKC | Self::ARKD | Self::ARKY | Self::ARKB => {
+                DataSource::Shares21
+            }
+
+            Self::PRNT | Self::IZRL => DataSource::Ark,
+
+            Self::EUROPE_ARKI | Self::EUROPE_ARKG | Self::EUROPE_ARKK => DataSource::ArkEurope,
+
+            Self::CYBR
+            | Self::CYCL
+            | Self::FOOD
+            | Self::LIFE
+            | Self::LUSA
+            | Self::NFRA
+            | Self::PMNT => DataSource::Rize,
         }
     }
 

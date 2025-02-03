@@ -6,7 +6,7 @@ use reqwest::blocking::Client;
 use serde_json::Value;
 use std::io::Cursor;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reader {
     Csv,
     Json,

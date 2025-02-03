@@ -16,7 +16,7 @@ pub mod df;
 mod format;
 pub mod ticker;
 
-#[derive(Debug, Default, EnumString, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, EnumString, Clone, Copy, PartialEq, Eq)]
 pub enum Source {
     // Reads Parquet file if exists
     Read,
@@ -132,12 +132,7 @@ impl Ark {
 
     fn concat_df(dfs: Vec<DF>) -> Result<DF, Error> {
         // with dedupe
-        let df = concat(
-            dfs.lazy(),
-            UnionArgs {
-                ..Default::default()
-            },
-        )?;
+        let df = concat(dfs.lazy(), Default::default())?;
         Self::dedupe(df.into())
     }
 
@@ -378,6 +373,10 @@ impl Ark {
                 .str()
                 .replace_all(lit("."), lit(""), true)
                 .str()
+                .replace_all(lit(" &CURITY"), lit(""), true)
+                .str()
+                .replace_all(lit(" &"), lit(""), true)
+                .str()
                 .replace(lit("HLDGS"), lit(""), true)
                 .str()
                 .replace(lit("HOLDINGS"), lit(""), true)
@@ -393,6 +392,8 @@ impl Ark {
                 .replace(lit(" AG"), lit(""), true)
                 .str()
                 .replace(lit(" ADR"), lit(""), true)
+                .str()
+                .replace(lit("DR"), lit(""), true)
                 .str()
                 .replace(lit(" SA"), lit(""), true)
                 .str()
@@ -561,13 +562,7 @@ impl Ark {
             dfs.push(LazyCsvReader::new(x).finish()?);
         }
 
-        let mut df = concat(
-            dfs,
-            UnionArgs {
-                ..Default::default()
-            },
-        )?
-        .into();
+        let mut df = concat(dfs, Default::default())?.into();
 
         if Self::read_parquet(&ticker, path.as_ref()).is_ok() {
             let df_old = Self::read_parquet(&ticker, path.as_ref())?;
@@ -611,7 +606,7 @@ mod tests {
             ],
         )?;
 
-        Ark::write_df_parquet("data/test/ARKW.parquet".into(), test_df.clone().into())?;
+        Ark::write_df_parquet("data/test/ARKW.parquet".into(), test_df.into())?;
         let read = Ark::new(Source::Read, Ticker::ARKW, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKW.parquet")?;
 
@@ -637,7 +632,7 @@ mod tests {
                 Some("ARKB"),
             ],
         )?;
-        Ark::write_df_parquet("data/test/ARKF.parquet".into(), test_df.clone().into())?;
+        Ark::write_df_parquet("data/test/ARKF.parquet".into(), test_df.into())?;
         let read = Ark::new(Source::Read, Ticker::ARKF, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKF.parquet")?;
 

@@ -47,7 +47,7 @@ fn csv_merge() -> Result<(), Error> {
 
 fn ark_plan(ticker: Ticker) -> Result<(), Error> {
     println!("Starting: {:#?}", ticker);
-    let sec = Duration::from_secs(rand::thread_rng().gen_range(30 * 60..=4 * 60 * 60));
+    let sec = Duration::from_secs(rand::rng().random_range(30 * 60..=4 * 60 * 60));
     // sleep(sec).await;
     thread::sleep(sec);
 

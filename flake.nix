@@ -44,7 +44,6 @@
               fpc.rustc
               fpc.clippy
               fpc.rust-src
-              fpc.rustc
               fpc.rustfmt
               fpc.rustc-codegen-cranelift-preview
             ])
@@ -59,18 +58,23 @@
 
           buildInputs =
             [
-              pkgs.openssl
               pkgs.pkg-config
+              pkgs.openssl
+              pkgs.openssl.dev
               # Add additional build inputs here
             ]
             ++ lib.optionals pkgs.stdenv.isDarwin [
               # Additional darwin specific inputs can be set here
               pkgs.libiconv
               pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              pkgs.darwin.apple_sdk.frameworks.Security
             ];
 
           # Additional environment variables can be set directly
           # MY_CUSTOM_VAR = "some value";
+          OPENSSL_NO_VENDOR = "1";
+          OPENSSL_DIR = "${pkgs.openssl.dev}";
+          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
         };
 
         craneLibLLvmTools = craneLib.overrideToolchain (

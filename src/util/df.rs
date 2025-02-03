@@ -10,27 +10,27 @@ pub enum DF {
 
 impl From<LazyFrame> for DF {
     fn from(lf: LazyFrame) -> Self {
-        DF::LazyFrame(lf)
+        Self::LazyFrame(lf)
     }
 }
 
 impl From<DataFrame> for DF {
     fn from(df: DataFrame) -> Self {
-        DF::DataFrame(df)
+        Self::DataFrame(df)
     }
 }
 
 impl DF {
     pub fn collect(self) -> anyhow::Result<DataFrame, Error> {
         match self {
-            DF::LazyFrame(x) => Ok(x.collect()?),
-            DF::DataFrame(x) => Ok(x),
+            Self::LazyFrame(x) => Ok(x.collect()?),
+            Self::DataFrame(x) => Ok(x),
         }
     }
     pub fn lazy(self) -> LazyFrame {
         match self {
-            DF::LazyFrame(x) => x,
-            DF::DataFrame(x) => x.lazy(),
+            Self::LazyFrame(x) => x,
+            Self::DataFrame(x) => x.lazy(),
         }
     }
 }

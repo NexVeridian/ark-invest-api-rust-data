@@ -6,7 +6,7 @@ use strum_macros::EnumIter;
 use crate::util::df::DF;
 
 #[allow(clippy::upper_case_acronyms, non_camel_case_types)]
-#[derive(Debug, strum_macros::Display, EnumIter, Clone, Copy, PartialEq)]
+#[derive(Debug, strum_macros::Display, EnumIter, Clone, Copy, PartialEq, Eq)]
 pub enum Ticker {
     ARKW,
     MKFG,
@@ -16,7 +16,7 @@ pub enum Ticker {
 
 impl Ticker {
     pub fn all(mut df: DF) -> Result<DF, Error> {
-        for ticker in Ticker::iter() {
+        for ticker in Self::iter() {
             df = ticker.format(df)?;
         }
         Ok(df)
@@ -24,10 +24,10 @@ impl Ticker {
 
     pub fn format(&self, df: DF) -> Result<DF, Error> {
         match self {
-            Ticker::ARKW => Self::arkw(df),
-            Ticker::MKFG => Self::mkfg(df),
-            Ticker::XYZ => Self::xyz(df),
-            Ticker::CASH_USD => Self::cash_usd(df),
+            Self::ARKW => Self::arkw(df),
+            Self::MKFG => Self::mkfg(df),
+            Self::XYZ => Self::xyz(df),
+            Self::CASH_USD => Self::cash_usd(df),
         }
     }
 
