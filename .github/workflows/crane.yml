@@ -1,0 +1,28 @@
+name: crane
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: 0 0 * * 1
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@main
+      - run: nix run -I nixpkgs=channel:nixos-unstable nixpkgs#attic-client login nex https://nix.nexveridian.com ${{ secrets.ATTIC_TOKEN }}
+      - run: nix run -I nixpkgs=channel:nixos-unstable nixpkgs#attic-client cache create ark-invest-api-rust-data || true
+      - run: nix run -I nixpkgs=channel:nixos-unstable nixpkgs#attic-client use ark-invest-api-rust-data
+      - run: nix flake check --all-systems
+      - run: nix run -I nixpkgs=channel:nixos-unstable nixpkgs#attic-client push ark-invest-api-rust-data /nix/store/*/ || true
