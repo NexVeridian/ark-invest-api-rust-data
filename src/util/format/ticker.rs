@@ -10,6 +10,7 @@ use crate::util::df::DF;
 pub enum Ticker {
     ARKW,
     MKFG,
+    XYZ,
     CASH_USD,
 }
 
@@ -25,6 +26,7 @@ impl Ticker {
         match self {
             Ticker::ARKW => Self::arkw(df),
             Ticker::MKFG => Self::mkfg(df),
+            Ticker::XYZ => Self::xyz(df),
             Ticker::CASH_USD => Self::cash_usd(df),
         }
     }
@@ -97,6 +99,24 @@ impl Ticker {
         Ok(df.into())
     }
 
+    fn xyz(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("BLOCK")))
+                .then(lit("XYZ"))
+                .otherwise(col("ticker"))
+                .alias("ticker")])
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
+
     fn cash_usd(df: DF) -> Result<DF, Error> {
         let mut df = df.collect()?;
 
@@ -147,6 +167,17 @@ mod tests {
 			&[Some("MARKFORGEDG"), Some("MARKFORGEDG")]
 		)?,
 	)]
+    #[case::xyz(
+        Ticker::XYZ,
+        defualt_df(
+            &[Some("SQ"), Some("YXZ")],
+            &[Some("BLOCK"), Some("BLOCK")],
+        )?,
+        defualt_df(
+            &[Some("XYZ"), Some("XYZ")],
+            &[Some("BLOCK"), Some("BLOCK")],
+        )?,
+    )]
     #[case::arkb(
 		Ticker::ARKW,
 		defualt_df(
