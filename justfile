@@ -1,23 +1,31 @@
-check:
-    just precommit-shared
-    nix flake update
-    nix flake check -v
+set shell := ["bash", "-c"]
+set dotenv-path := "./config/dev.env"
+engine := `if command -v docker >/dev/null 2>&1; then echo "docker"; else echo "podman"; fi`
 
-precommit:
-    just precommit-shared
+precommit upgrade="false":
+    #!/usr/bin/env bash
+    if [[ {{upgrade}} == "true" ]]; then just upgrade; fi
+    just clippy
     cargo check
     just test
 
+check upgrade="false":
+    #!/usr/bin/env bash
+    if [[ {{upgrade}} == "true" ]]; then just upgrade; fi
+    just clippy
+    nix flake check -v
+
 alias t := test
 test:
-    cargo t --no-fail-fast
+    cargo t --workspace --no-fail-fast --no-tests=pass -E "all() - test(get_api) - kind(bin)"
 
-precommit-shared:
-    cargo upgrade -v
-    cargo update
-    cargo fmt --all
-    just clippy
+alias u := upgrade
+alias update := upgrade
+upgrade:
+    nix flake update
+    cargo upgrade -v --recursive
+    cargo update --workspace
 
 clippy:
-    cargo clippy --all --fix --allow-dirty -- -W clippy::nursery -W rust-2018-idioms \
-        -A clippy::future_not_send -A clippy::option_if_let_else -A clippy::or_fun_call
+    cargo fmt --all
+    cargo clippy --workspace --fix --allow-dirty

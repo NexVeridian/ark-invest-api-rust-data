@@ -4,6 +4,9 @@ version = "1.0.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
+[lints]
+workspace = true
+
 [dependencies]
 polars = { version = "0.32", features = [
     "lazy",
@@ -20,7 +23,7 @@ glob = { version = "0.3" }
 clokwerk = "0.4"
 strum_macros = "0.27"
 strum = "0.27"
-tokio = { version = "1.43", features = ["full"] }
+tokio = { version = "1.44", features = ["full"] }
 openssl = { version = "0.10", features = ["vendored"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1.0"
@@ -30,5 +33,14 @@ lazy_static = "1.5"
 anyhow = "1.0"
 
 [dev-dependencies]
-rstest = "0.24"
+rstest = "0.25"
 pretty_assertions = "1.4"
+
+[workspace.lints.rust]
+rust-2018-idioms = "warn"
+
+[workspace.lints.clippy]
+nursery = { level = "warn", priority = -1 }
+future_not_send = "allow"
+option_if_let_else = "allow"
+or_fun_call = "allow"

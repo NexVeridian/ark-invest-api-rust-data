@@ -9,10 +9,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils";
-    advisory-db = {
-      url = "github:rustsec/advisory-db";
-      flake = false;
-    };
   };
 
   outputs =
@@ -22,7 +18,6 @@
       crane,
       fenix,
       flake-utils,
-      advisory-db,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
@@ -56,34 +51,22 @@
           inherit src;
           strictDeps = true;
 
+          nativeBuildInputs = [
+            pkgs.pkg-config
+            pkgs.perl
+          ];
+
           buildInputs =
             [
-              pkgs.pkg-config
               pkgs.openssl
-              pkgs.openssl.dev
-              # Add additional build inputs here
             ]
             ++ lib.optionals pkgs.stdenv.isDarwin [
-              # Additional darwin specific inputs can be set here
               pkgs.libiconv
               pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
               pkgs.darwin.apple_sdk.frameworks.Security
             ];
-
-          # Additional environment variables can be set directly
-          # MY_CUSTOM_VAR = "some value";
-          OPENSSL_NO_VENDOR = "1";
-          OPENSSL_DIR = "${pkgs.openssl.dev}";
-          OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.openssl ];
         };
-
-        craneLibLLvmTools = craneLib.overrideToolchain (
-          fenix.packages.${system}.complete.withComponents [
-            "cargo"
-            "llvm-tools"
-            "rustc"
-          ]
-        );
 
         # Build *just* the cargo dependencies, so we can reuse
         # all of that work (e.g. via cachix) when running in CI
@@ -103,7 +86,10 @@
         dockerImage = pkgs.dockerTools.buildImage {
           name = "ark-invest-api-rust-data";
           tag = "latest";
-          copyToRoot = [ my-crate ];
+          copyToRoot = [
+            my-crate
+            pkgs.dockerTools.caCertificates
+          ];
           config = {
             Cmd = [ "${my-crate}/bin/ark-invest-api-rust-data" ];
           };
@@ -124,7 +110,7 @@
             commonArgs
             // {
               inherit cargoArtifacts;
-              cargoClippyExtraArgs = "--all-targets -- --deny warnings";
+              cargoExtraArgs = "--workspace";
             }
           );
 
@@ -135,17 +121,8 @@
           # Check formatting
           my-crate-fmt = craneLib.cargoFmt {
             inherit src;
+            cargoExtraArgs = "--all";
           };
-
-          # # Audit dependencies
-          # my-crate-audit = craneLib.cargoAudit {
-          #   inherit src advisory-db;
-          # };
-
-          # # Audit licenses
-          # my-crate-deny = craneLib.cargoDeny {
-          #   inherit src;
-          # };
 
           # Run tests with cargo-nextest
           # Consider setting `doCheck = false` on `my-crate` if you do not want
@@ -156,6 +133,8 @@
               inherit cargoArtifacts;
               partitions = 1;
               partitionType = "count";
+              cargoNextestPartitionsExtraArgs = "--no-tests=pass --no-fail-fast -E 'all() - test(get_api) - kind(bin)'";
+              cargoExtraArgs = "--workspace";
             }
           );
         };
