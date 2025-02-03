@@ -8,11 +8,11 @@ t = "nextest run"
 [build]
 target-dir = "target/target"
 
-[unstable]
-codegen-backend = true
+# [unstable]
+# codegen-backend = true
 
-[profile.release]
-codegen-backend = "cranelift"
+# [profile.release]
+# codegen-backend = "cranelift"
 
-[profile.dev]
-codegen-backend = "cranelift"
+# [profile.dev]
+# codegen-backend = "cranelift"
