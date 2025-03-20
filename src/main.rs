@@ -69,7 +69,7 @@ async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Error> {
 
 async fn ark_etf() {
     let futures = Ticker::iter()
-        .filter(|&x| x != Ticker::ARKVX)
+        .filter(|&x| x != Ticker::ARKVX && x != Ticker::ARKC && x != Ticker::ARKY)
         .map(spawn_ark_plan)
         .collect::<Vec<_>>();
 
