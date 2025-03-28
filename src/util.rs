@@ -46,7 +46,7 @@ impl Ark {
         let mut ark = Self {
             df: match existing_file {
                 true => Self::read_parquet(&ticker, path.as_ref())?,
-                false => DF::DataFrame(df!["date" => [""],]?),
+                false => DF::DataFrame(Box::new(df!["date" => [""],]?)),
             },
             ticker,
             path,
