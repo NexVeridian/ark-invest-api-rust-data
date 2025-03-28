@@ -4,19 +4,19 @@ use polars::prelude::{IntoLazy, LazyFrame};
 
 #[derive(Clone)]
 pub enum DF {
-    LazyFrame(LazyFrame),
-    DataFrame(DataFrame),
+    LazyFrame(Box<LazyFrame>),
+    DataFrame(Box<DataFrame>),
 }
 
 impl From<LazyFrame> for DF {
     fn from(lf: LazyFrame) -> Self {
-        Self::LazyFrame(lf)
+        Self::LazyFrame(Box::new(lf))
     }
 }
 
 impl From<DataFrame> for DF {
     fn from(df: DataFrame) -> Self {
-        Self::DataFrame(df)
+        Self::DataFrame(Box::new(df))
     }
 }
 
@@ -24,12 +24,12 @@ impl DF {
     pub fn collect(self) -> anyhow::Result<DataFrame, Error> {
         match self {
             Self::LazyFrame(x) => Ok(x.collect()?),
-            Self::DataFrame(x) => Ok(x),
+            Self::DataFrame(x) => Ok(*x),
         }
     }
     pub fn lazy(self) -> LazyFrame {
         match self {
-            Self::LazyFrame(x) => x,
+            Self::LazyFrame(x) => *x,
             Self::DataFrame(x) => x.lazy(),
         }
     }
