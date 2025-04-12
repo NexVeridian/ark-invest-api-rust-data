@@ -11,6 +11,7 @@ pub enum Ticker {
     ARKW,
     CRWV,
     MKFG,
+    LUNR,
     XYZ,
     CASH_USD,
 }
@@ -28,6 +29,7 @@ impl Ticker {
             Self::ARKW => Self::arkw(df),
             Self::CRWV => Self::crwv(df),
             Self::MKFG => Self::mkfg(df),
+            Self::LUNR => Self::lunr(df),
             Self::XYZ => Self::xyz(df),
             Self::CASH_USD => Self::cash_usd(df),
         }
@@ -109,6 +111,24 @@ impl Ticker {
             .lazy()
             .with_columns(vec![when(col("company").eq(lit("MARKFORGEDG")))
                 .then(lit("MKFG"))
+                .otherwise(col("ticker"))
+                .alias("ticker")])
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
+
+    fn lunr(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("INTUITIVE MACHINES")))
+                .then(lit("LUNR"))
                 .otherwise(col("ticker"))
                 .alias("ticker")])
             .collect()
@@ -216,6 +236,17 @@ mod tests {
 		defualt_df(
 			&[Some("MKFG"), Some("MKFG")],
 			&[Some("MARKFORGEDG"), Some("MARKFORGEDG")]
+		)?,
+	)]
+    #[case::lunr(
+		Ticker::LUNR,
+		defualt_df(
+            &[Some("LUNR"), None::<&str>],
+            &[Some("INTUITIVE MACHINES"), Some("INTUITIVE MACHINES")]
+        )?,
+		defualt_df(
+			&[Some("LUNR"), Some("LUNR")],
+			&[Some("INTUITIVE MACHINES"), Some("INTUITIVE MACHINES")]
 		)?,
 	)]
     #[case::xyz(
