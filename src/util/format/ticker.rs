@@ -9,6 +9,7 @@ use crate::util::df::DF;
 #[derive(Debug, strum_macros::Display, EnumIter, Clone, Copy, PartialEq, Eq)]
 pub enum Ticker {
     ARKW,
+    CRWV,
     MKFG,
     XYZ,
     CASH_USD,
@@ -25,6 +26,7 @@ impl Ticker {
     pub fn format(&self, df: DF) -> Result<DF, Error> {
         match self {
             Self::ARKW => Self::arkw(df),
+            Self::CRWV => Self::crwv(df),
             Self::MKFG => Self::mkfg(df),
             Self::XYZ => Self::xyz(df),
             Self::CASH_USD => Self::cash_usd(df),
@@ -73,6 +75,24 @@ impl Ticker {
                 "ARK BITCOIN ETF HOLDCO (ARKF)",
                 "ARKB",
             ))
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
+
+    fn crwv(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("COREWEAVE")))
+                .then(lit("CRWV"))
+                .otherwise(col("ticker"))
+                .alias("ticker")])
             .collect()
         {
             df = x;
@@ -156,6 +176,33 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
+    #[case::arkb(
+		Ticker::ARKW,
+		defualt_df(
+            &[None::<&str>, Some("ARKB"), Some("ARKB"), Some("ARKB")],
+            &[
+                Some("ARK BITCOIN ETF HOLDCO (ARKW)"),
+                Some("ARK BITCOIN ETF HOLDCO (ARKW)"),
+                Some("ARK BITCOIN ETF HOLDCO (ARKF)"),
+                Some("ARKB"),
+            ],
+        )?,
+		defualt_df(
+			&[Some("ARKB"), Some("ARKB"), Some("ARKB"), Some("ARKB")],
+			&[Some("ARKB"), Some("ARKB"), Some("ARKB"), Some("ARKB")],
+		)?,
+	)]
+    #[case::crwv(
+        Ticker::CRWV,
+        defualt_df(
+            &[Some("CRWV"), None::<&str>],
+            &[Some("COREWEAVE"), Some("COREWEAVE")],
+        )?,
+        defualt_df(
+            &[Some("CRWV"), Some("CRWV")],
+            &[Some("COREWEAVE"), Some("COREWEAVE")]
+        )?,
+    )]
     #[case::mkfg(
 		Ticker::MKFG,
 		defualt_df(
@@ -178,22 +225,6 @@ mod tests {
             &[Some("BLOCK"), Some("BLOCK")],
         )?,
     )]
-    #[case::arkb(
-		Ticker::ARKW,
-		defualt_df(
-            &[None::<&str>, Some("ARKB"), Some("ARKB"), Some("ARKB")],
-            &[
-                Some("ARK BITCOIN ETF HOLDCO (ARKW)"),
-                Some("ARK BITCOIN ETF HOLDCO (ARKW)"),
-                Some("ARK BITCOIN ETF HOLDCO (ARKF)"),
-                Some("ARKB"),
-            ],
-        )?,
-		defualt_df(
-			&[Some("ARKB"), Some("ARKB"), Some("ARKB"), Some("ARKB")],
-			&[Some("ARKB"), Some("ARKB"), Some("ARKB"), Some("ARKB")],
-		)?,
-	)]
     #[case::cash_usd(
 		Ticker::CASH_USD,
 		defualt_df(
