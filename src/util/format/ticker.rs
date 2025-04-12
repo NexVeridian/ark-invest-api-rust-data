@@ -129,6 +129,10 @@ impl Ticker {
                 .then(lit("XYZ"))
                 .otherwise(col("ticker"))
                 .alias("ticker")])
+            .with_columns(vec![when(col("company").eq(lit("Block")))
+                .then(lit("XYZ"))
+                .otherwise(col("ticker"))
+                .alias("ticker")])
             .collect()
         {
             df = x;
@@ -217,12 +221,12 @@ mod tests {
     #[case::xyz(
         Ticker::XYZ,
         defualt_df(
-            &[Some("SQ"), Some("YXZ")],
-            &[Some("BLOCK"), Some("BLOCK")],
+            &[Some("SQ"), Some("SQ"), Some("XYZ"), Some("XYZ")],
+            &[Some("Block"), Some("BLOCK"), Some("Block"), Some("BLOCK")],
         )?,
         defualt_df(
-            &[Some("XYZ"), Some("XYZ")],
-            &[Some("BLOCK"), Some("BLOCK")],
+            &[Some("XYZ"), Some("XYZ"), Some("XYZ"), Some("XYZ")],
+            &[Some("Block"), Some("BLOCK"), Some("Block"), Some("BLOCK")],
         )?,
     )]
     #[case::cash_usd(
