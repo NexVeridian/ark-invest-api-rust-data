@@ -10,6 +10,7 @@ use crate::util::df::DF;
 pub enum Ticker {
     ARKW,
     CRWV,
+    DKNG,
     ETOR,
     MKFG,
     LUNR,
@@ -30,6 +31,7 @@ impl Ticker {
         match self {
             Self::ARKW => Self::arkw(df),
             Self::CRWV => Self::crwv(df),
+            Self::DKNG => Self::dkng(df),
             Self::ETOR => Self::etor(df),
             Self::MKFG => Self::mkfg(df),
             Self::LUNR => Self::lunr(df),
@@ -99,6 +101,24 @@ impl Ticker {
                 .then(lit("CRWV"))
                 .otherwise(col("ticker"))
                 .alias("ticker")])
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
+
+    fn dkng(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("AFTKINGS")))
+                .then(lit("DRAFTKINGS"))
+                .otherwise(col("company"))
+                .alias("company")])
             .collect()
         {
             df = x;
@@ -276,6 +296,17 @@ mod tests {
         defualt_df(
             &[Some("ETOR"), Some("ETOR")],
             &[Some("ETORO GROUP"), Some("ETORO GROUP")]
+        )?,
+    )]
+    #[case::dkng(
+        Ticker::DKNG,
+        defualt_df(
+            &[Some("DKNG")],
+            &[Some("AFTKINGS")],
+        )?,
+        defualt_df(
+            &[Some("DKNG")],
+            &[Some("DRAFTKINGS")]
         )?,
     )]
     #[case::mkfg(
