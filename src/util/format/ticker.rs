@@ -15,6 +15,7 @@ pub enum Ticker {
     LUNR,
     XYZ,
     CASH_USD,
+    TSM,
 }
 
 impl Ticker {
@@ -34,6 +35,7 @@ impl Ticker {
             Self::LUNR => Self::lunr(df),
             Self::XYZ => Self::xyz(df),
             Self::CASH_USD => Self::cash_usd(df),
+            Self::TSM => Self::tsm(df),
         }
     }
 
@@ -210,6 +212,24 @@ impl Ticker {
 
         Ok(df.into())
     }
+
+    fn tsm(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("TAIWANMICONDUCTORSP")))
+                .then(lit("TMSC"))
+                .otherwise(col("company"))
+                .alias("company")])
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
 }
 
 #[cfg(test)]
@@ -302,6 +322,17 @@ mod tests {
 			&[Some("CASH_USD"), Some("CASH_USD"), Some("CASH_USD"), Some("CASH_USD")],
 		)?,
 	)]
+    #[case::tsm(
+        Ticker::TSM,
+        defualt_df(
+            &[Some("TSM")],
+            &[Some("TAIWANMICONDUCTORSP")],
+        )?,
+        defualt_df(
+            &[Some("TSM")],
+            &[Some("TMSC")]
+        )?,
+    )]
     fn matrix(
         #[case] ticker: Ticker,
         #[case] input: DataFrame,
