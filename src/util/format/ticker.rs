@@ -10,6 +10,7 @@ use crate::util::df::DF;
 pub enum Ticker {
     ARKW,
     CRWV,
+    ETOR,
     MKFG,
     LUNR,
     XYZ,
@@ -28,6 +29,7 @@ impl Ticker {
         match self {
             Self::ARKW => Self::arkw(df),
             Self::CRWV => Self::crwv(df),
+            Self::ETOR => Self::etor(df),
             Self::MKFG => Self::mkfg(df),
             Self::LUNR => Self::lunr(df),
             Self::XYZ => Self::xyz(df),
@@ -93,6 +95,24 @@ impl Ticker {
             .lazy()
             .with_columns(vec![when(col("company").eq(lit("COREWEAVE")))
                 .then(lit("CRWV"))
+                .otherwise(col("ticker"))
+                .alias("ticker")])
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
+
+    fn etor(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("ETORO GROUP")))
+                .then(lit("ETOR"))
                 .otherwise(col("ticker"))
                 .alias("ticker")])
             .collect()
@@ -225,6 +245,17 @@ mod tests {
         defualt_df(
             &[Some("CRWV"), Some("CRWV")],
             &[Some("COREWEAVE"), Some("COREWEAVE")]
+        )?,
+    )]
+    #[case::etor(
+        Ticker::ETOR,
+        defualt_df(
+            &[Some("ETOR"), None::<&str>],
+            &[Some("ETORO GROUP"), Some("ETORO GROUP")],
+        )?,
+        defualt_df(
+            &[Some("ETOR"), Some("ETOR")],
+            &[Some("ETORO GROUP"), Some("ETORO GROUP")]
         )?,
     )]
     #[case::mkfg(
