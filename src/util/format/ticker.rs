@@ -17,6 +17,7 @@ pub enum Ticker {
     XYZ,
     CASH_USD,
     TSM,
+    RKLB,
 }
 
 impl Ticker {
@@ -38,6 +39,7 @@ impl Ticker {
             Self::XYZ => Self::xyz(df),
             Self::CASH_USD => Self::cash_usd(df),
             Self::TSM => Self::tsm(df),
+            Self::RKLB => Self::rklb(df),
         }
     }
 
@@ -250,6 +252,30 @@ impl Ticker {
 
         Ok(df.into())
     }
+
+    fn rklb(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![
+                when(col("company").eq(lit("ROCKET LAB")))
+                    .then(lit("RKLB"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+                when(col("company").eq(lit("ROCKET LAB USA")))
+                    .then(lit("ROCKET LAB"))
+                    .otherwise(col("company"))
+                    .alias("company")
+            ])
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
 }
 
 #[cfg(test)]
@@ -362,6 +388,17 @@ mod tests {
         defualt_df(
             &[Some("TSM")],
             &[Some("TMSC")]
+        )?,
+    )]
+    #[case::rklb(
+        Ticker::RKLB,
+        defualt_df(
+            &[Some("RKLB"), Some("RKLB"), None::<&str>],
+            &[Some("ROCKET LAB"), Some("ROCKET LAB USA"), Some("ROCKET LAB")],
+        )?,
+        defualt_df(
+            &[Some("RKLB"), Some("RKLB"), Some("RKLB")],
+            &[Some("ROCKET LAB"), Some("ROCKET LAB"), Some("ROCKET LAB")]
         )?,
     )]
     fn matrix(
