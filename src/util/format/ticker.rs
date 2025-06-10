@@ -9,6 +9,7 @@ use crate::util::df::DF;
 #[derive(Debug, strum_macros::Display, EnumIter, Clone, Copy, PartialEq, Eq)]
 pub enum Ticker {
     ARKW,
+    CRLC,
     CRWV,
     DKNG,
     ETOR,
@@ -31,6 +32,7 @@ impl Ticker {
     pub fn format(&self, df: DF) -> Result<DF, Error> {
         match self {
             Self::ARKW => Self::arkw(df),
+            Self::CRLC => Self::crlc(df),
             Self::CRWV => Self::crwv(df),
             Self::DKNG => Self::dkng(df),
             Self::ETOR => Self::etor(df),
@@ -85,6 +87,24 @@ impl Ticker {
                 "ARK BITCOIN ETF HOLDCO (ARKF)",
                 "ARKB",
             ))
+            .collect()
+        {
+            df = x;
+        }
+
+        Ok(df.into())
+    }
+
+    fn crlc(df: DF) -> Result<DF, Error> {
+        let mut df = df.collect()?;
+
+        if let Ok(x) = df
+            .clone()
+            .lazy()
+            .with_columns(vec![when(col("company").eq(lit("CIRCLE INTERNET GROUP")))
+                .then(lit("CRLC"))
+                .otherwise(col("ticker"))
+                .alias("ticker")])
             .collect()
         {
             df = x;
@@ -302,6 +322,17 @@ mod tests {
 			&[Some("ARKB"), Some("ARKB"), Some("ARKB"), Some("ARKB")],
 		)?,
 	)]
+    #[case::crlc(
+        Ticker::CRLC,
+        defualt_df(
+            &[Some("CRLC"), None::<&str>],
+            &[Some("CIRCLE INTERNET GROUP"), Some("CIRCLE INTERNET GROUP")],
+        )?,
+        defualt_df(
+            &[Some("CRLC"), Some("CRLC")],
+            &[Some("CIRCLE INTERNET GROUP"), Some("CIRCLE INTERNET GROUP")]
+        )?,
+    )]
     #[case::crwv(
         Ticker::CRWV,
         defualt_df(
