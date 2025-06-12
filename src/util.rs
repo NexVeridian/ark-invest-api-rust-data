@@ -110,8 +110,8 @@ impl Ark {
     fn read_parquet(ticker: &Ticker, path: Option<&String>) -> Result<DF, Error> {
         let df = LazyFrame::scan_parquet(
             match path {
-                Some(p) => format!("{}/{}.parquet", p, ticker),
-                None => format!("data/parquet/{}.parquet", ticker),
+                Some(p) => format!("{p}/{ticker}.parquet"),
+                None => format!("data/parquet/{ticker}.parquet"),
             },
             ScanArgsParquet::default(),
         )?;
@@ -558,7 +558,7 @@ impl Ark {
 
     pub fn merge_old_csv_to_parquet(ticker: Ticker, path: Option<String>) -> Result<Self, Error> {
         let mut dfs = vec![];
-        for x in glob(&format!("data/csv/{}/*", ticker))?.filter_map(Result::ok) {
+        for x in glob(&format!("data/csv/{ticker}/*"))?.filter_map(Result::ok) {
             dfs.push(LazyCsvReader::new(x).finish()?);
         }
 

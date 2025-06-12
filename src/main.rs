@@ -31,7 +31,7 @@ fn print_df(ticker: &Ticker, df: &DataFrame) {
 
 fn csv_merge() -> Result<(), Error> {
     for ticker in Ticker::iter() {
-        if !std::path::Path::new(&format!("./data/csv/{}", ticker)).exists() {
+        if !std::path::Path::new(&format!("./data/csv/{ticker}")).exists() {
             continue;
         }
 
@@ -46,7 +46,7 @@ fn csv_merge() -> Result<(), Error> {
 }
 
 fn ark_plan(ticker: Ticker) -> Result<(), Error> {
-    println!("Starting: {:#?}", ticker);
+    println!("Starting: {ticker:#?}");
     let sec = Duration::from_secs(rand::rng().random_range(30 * 60..=4 * 60 * 60));
     // sleep(sec).await;
     thread::sleep(sec);
