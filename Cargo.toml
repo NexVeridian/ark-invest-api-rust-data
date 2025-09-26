@@ -5,30 +5,30 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-polars = { version = "0.32", features = [
-    "lazy",
-    "strings",
-    "parquet",
-    "round_series",
-    "lazy_regex",
-    "json",
-    "object",
-    "dtype-struct",
-] }
-reqwest = { version = "0.12", features = ["blocking", "gzip"] }
-glob = { version = "0.3" }
-clokwerk = "0.4"
-strum_macros = "0.27"
-strum = "0.27"
-tokio = { version = "1.43", features = ["full"] }
-openssl = { version = "0.10", features = ["vendored"] }
-chrono = { version = "0.4", features = ["serde"] }
-serde_json = "1.0"
-rand = "0.9"
-futures = "0.3"
-lazy_static = "1.5"
 anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+clokwerk = "0.4"
+futures = "0.3"
+glob = { version = "0.3" }
+lazy_static = "1.5"
+openssl = { version = "0.10", features = ["vendored"] }
+polars = { version = "0.32", features = [
+  "dtype-struct",
+  "json",
+  "lazy",
+  "lazy_regex",
+  "object",
+  "parquet",
+  "round_series",
+  "strings",
+] }
+rand = "0.9"
+reqwest = { version = "0.12", features = ["blocking", "gzip"] }
+serde_json = "1.0"
+strum = "0.27"
+strum_macros = "0.27"
+tokio = { version = "1.43", features = ["full"] }
 
 [dev-dependencies]
-rstest = "0.24"
 pretty_assertions = "1.4"
+rstest = "0.24"

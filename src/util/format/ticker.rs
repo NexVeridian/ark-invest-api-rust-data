@@ -287,7 +287,7 @@ impl Ticker {
                 when(col("company").eq(lit("ROCKET LAB USA")))
                     .then(lit("ROCKET LAB"))
                     .otherwise(col("company"))
-                    .alias("company")
+                    .alias("company"),
             ])
             .collect()
         {
