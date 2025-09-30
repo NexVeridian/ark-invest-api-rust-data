@@ -1,8 +1,37 @@
 [package]
 name = "ark-invest-api-rust-data"
-version = "1.0.0"
-edition = "2021"
+version = "0.1.0"
+edition = "2024"
 license = "MIT OR Apache-2.0"
+
+[package.metadata.cargo-machete]
+ignored = ["openssl"]
+
+[workspace]
+resolver = "3"
+members = ["."]
+
+[workspace.lints.clippy]
+cognitive-complexity = "allow"
+correctness = { level = "warn", priority = -1 }
+future_not_send = { level = "warn", priority = -1 }
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+nursery = { level = "warn", priority = -1 }
+option_if_let_else = { level = "warn", priority = -1 }
+or_fun_call = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+return_self_not_must_use = "allow"
+style = { level = "warn", priority = -1 }
+too-many-lines = "allow"
+unreadable_literal = "allow"
+
+[workspace.lints.rust]
+rust-2018-compatibility = "warn"
+rust-2018-idioms = "warn"
+rust-2021-compatibility = "warn"
+rust-2024-compatibility = "warn"
 
 [dependencies]
 anyhow = "1.0"
@@ -10,7 +39,6 @@ chrono = { version = "0.4", features = ["serde"] }
 clokwerk = "0.4"
 futures = "0.3"
 glob = { version = "0.3" }
-lazy_static = "1.5"
 openssl = { version = "0.10", features = ["vendored"] }
 polars = { version = "0.32", features = [
   "dtype-struct",
@@ -27,8 +55,11 @@ reqwest = { version = "0.12", features = ["blocking", "gzip"] }
 serde_json = "1.0"
 strum = "0.27"
 strum_macros = "0.27"
-tokio = { version = "1.43", features = ["full"] }
+tokio = { version = "1.47", features = ["full"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4"
-rstest = "0.24"
+rstest = "0.26"
+
+[lints]
+workspace = true

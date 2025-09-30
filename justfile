@@ -1,23 +1,45 @@
-check:
-    just precommit-shared
-    nix flake update
-    nix flake check -v
-
 precommit:
-    just precommit-shared
-    cargo check
+    just clippy
+    cargo check --workspace
     just test
+
+check attic="false":
+    #!/usr/bin/env bash
+    just clippy
+
+    if [[ {{attic}} = "false" ]]; then
+        nix-fast-build --no-link
+    else
+        attic cache create {{attic}} | true
+        attic use {{attic}} | true
+        nix-fast-build --no-link
+        for i in {1..10}; do
+          attic push {{attic}} /nix/store/*/ && break || [ $i -eq 5 ] || sleep 5
+        done
+    fi
 
 alias t := test
 test:
-    cargo t --no-fail-fast
+    cargo t --workspace --no-fail-fast --no-tests=pass
 
-precommit-shared:
-    cargo upgrade -v
-    cargo update
-    cargo fmt --all
-    just clippy
+bacon:
+    bacon nextest
 
+alias update := upgrade
+upgrade force="false":
+    #!/usr/bin/env bash
+    nix flake update
+    if [[ {{force}} == "true" ]] then
+        cargo upgrade -v --recursive -i
+        cargo update --workspace --recursive --verbose
+    else
+        cargo upgrade -v --recursive
+        cargo update --workspace --recursive --verbose
+    fi
+
+alias fmt := clippy
 clippy:
-    cargo clippy --all --fix --allow-dirty -- -W clippy::nursery -W rust-2018-idioms \
-        -A clippy::future_not_send -A clippy::option_if_let_else -A clippy::or_fun_call
+    cargo fmt --all
+    tombi fmt
+    cargo clippy --all-targets --workspace --fix --allow-dirty
+    cargo machete --fix

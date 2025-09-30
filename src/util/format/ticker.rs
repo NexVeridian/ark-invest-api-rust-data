@@ -29,7 +29,7 @@ impl Ticker {
         Ok(df)
     }
 
-    pub fn format(&self, df: DF) -> Result<DF, Error> {
+    pub fn format(self, df: DF) -> Result<DF, Error> {
         match self {
             Self::ARKW => Self::arkw(df),
             Self::CRLC => Self::crlc(df),
@@ -101,10 +101,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("CIRCLE INTERNET GROUP")))
-                .then(lit("CRLC"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
+            .with_columns(vec![
+                when(col("company").eq(lit("CIRCLE INTERNET GROUP")))
+                    .then(lit("CRLC"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
             .collect()
         {
             df = x;
@@ -119,10 +121,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("COREWEAVE")))
-                .then(lit("CRWV"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
+            .with_columns(vec![
+                when(col("company").eq(lit("COREWEAVE")))
+                    .then(lit("CRWV"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
             .collect()
         {
             df = x;
@@ -137,10 +141,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("AFTKINGS")))
-                .then(lit("DRAFTKINGS"))
-                .otherwise(col("company"))
-                .alias("company")])
+            .with_columns(vec![
+                when(col("company").eq(lit("AFTKINGS")))
+                    .then(lit("DRAFTKINGS"))
+                    .otherwise(col("company"))
+                    .alias("company"),
+            ])
             .collect()
         {
             df = x;
@@ -155,10 +161,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("ETORO GROUP")))
-                .then(lit("ETOR"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
+            .with_columns(vec![
+                when(col("company").eq(lit("ETORO GROUP")))
+                    .then(lit("ETOR"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
             .collect()
         {
             df = x;
@@ -173,10 +181,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("MARKFORGEDG")))
-                .then(lit("MKFG"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
+            .with_columns(vec![
+                when(col("company").eq(lit("MARKFORGEDG")))
+                    .then(lit("MKFG"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
             .collect()
         {
             df = x;
@@ -191,10 +201,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("INTUITIVE MACHINES")))
-                .then(lit("LUNR"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
+            .with_columns(vec![
+                when(col("company").eq(lit("INTUITIVE MACHINES")))
+                    .then(lit("LUNR"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
             .collect()
         {
             df = x;
@@ -209,14 +221,18 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("BLOCK")))
-                .then(lit("XYZ"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
-            .with_columns(vec![when(col("company").eq(lit("Block")))
-                .then(lit("XYZ"))
-                .otherwise(col("ticker"))
-                .alias("ticker")])
+            .with_columns(vec![
+                when(col("company").eq(lit("BLOCK")))
+                    .then(lit("XYZ"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
+            .with_columns(vec![
+                when(col("company").eq(lit("Block")))
+                    .then(lit("XYZ"))
+                    .otherwise(col("ticker"))
+                    .alias("ticker"),
+            ])
             .collect()
         {
             df = x;
@@ -261,10 +277,12 @@ impl Ticker {
         if let Ok(x) = df
             .clone()
             .lazy()
-            .with_columns(vec![when(col("company").eq(lit("TAIWANMICONDUCTORSP")))
-                .then(lit("TMSC"))
-                .otherwise(col("company"))
-                .alias("company")])
+            .with_columns(vec![
+                when(col("company").eq(lit("TAIWANMICONDUCTORSP")))
+                    .then(lit("TMSC"))
+                    .otherwise(col("company"))
+                    .alias("company"),
+            ])
             .collect()
         {
             df = x;
@@ -300,10 +318,11 @@ impl Ticker {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test_utils::*;
     use pretty_assertions::assert_eq;
     use rstest::rstest;
+
+    use super::*;
+    use crate::test_utils::*;
 
     #[rstest]
     #[case::arkb(

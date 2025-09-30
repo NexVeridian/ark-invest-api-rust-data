@@ -46,6 +46,7 @@ pub enum Ticker {
 }
 
 impl Ticker {
+    #[must_use]
     pub const fn value(&self) -> &str {
         match *self {
             Self::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
@@ -81,6 +82,7 @@ impl Ticker {
         }
     }
 
+    #[must_use]
     pub const fn data_source(&self) -> DataSource {
         match *self {
             Self::ARKVX => DataSource::ArkVenture,
@@ -107,29 +109,59 @@ impl Ticker {
         }
     }
 
+    #[must_use]
     pub fn get_url(&self) -> String {
         match self.data_source() {
-            DataSource::ArkVenture => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}", self.value()),
-            DataSource::Ark => format!("https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv", self.value(), self),
-            DataSource::Shares21 => format!("https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv", self.value()),
-            DataSource::ArkEurope | DataSource::Rize => format!("https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/", self.value()),
+            DataSource::ArkVenture => format!(
+                "https://assets.ark-funds.com/fund-documents/funds-etf-csv/{}",
+                self.value()
+            ),
+            DataSource::Ark => format!(
+                "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_{}_ETF_{}_HOLDINGS.csv",
+                self.value(),
+                self
+            ),
+            DataSource::Shares21 => format!(
+                "https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/{}-Export.csv",
+                self.value()
+            ),
+            DataSource::ArkEurope | DataSource::Rize => format!(
+                "https://europe.ark-funds.com/funds/{}/full-fund-holdings-download/",
+                self.value()
+            ),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use pretty_assertions::assert_eq;
     use rstest::rstest;
 
+    use super::*;
+
     #[rstest]
-    #[case(Ticker::ARKVX, "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv")]
-    #[case(Ticker::ARKK, "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv")]
-    #[case(Ticker::ARKA, "https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/ARKA-Export.csv")]
-    #[case(Ticker::EUROPE_ARKI, "https://europe.ark-funds.com/funds/artificial-intelligence-robotics/full-fund-holdings-download/")]
-    #[case(Ticker::CYBR, "https://europe.ark-funds.com/funds/cybersecurity-and-data-privacy/full-fund-holdings-download/")]
+    #[case(
+        Ticker::ARKVX,
+        "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv"
+    )]
+    #[case(
+        Ticker::ARKK,
+        "https://assets.ark-funds.com/fund-documents/funds-etf-csv/ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv"
+    )]
+    #[case(
+        Ticker::ARKA,
+        "https://cdn.21shares-funds.com/uploads/fund-documents/us-bank/holdings/product/current/ARKA-Export.csv"
+    )]
+    #[case(
+        Ticker::EUROPE_ARKI,
+        "https://europe.ark-funds.com/funds/artificial-intelligence-robotics/full-fund-holdings-download/"
+    )]
+    #[case(
+        Ticker::CYBR,
+        "https://europe.ark-funds.com/funds/cybersecurity-and-data-privacy/full-fund-holdings-download/"
+    )]
     fn get_url(#[case] input: Ticker, #[case] expected: String) {
-        assert_eq!(input.get_url(), expected)
+        assert_eq!(input.get_url(), expected);
     }
 }

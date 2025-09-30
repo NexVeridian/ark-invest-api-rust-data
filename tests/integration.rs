@@ -1,10 +1,8 @@
 use anyhow::{Error, Result};
+use ark_invest_api_rust_data::util::{ticker::Ticker, *};
 use chrono::NaiveDate;
 use polars::datatypes::DataType;
 use pretty_assertions::assert_eq;
-
-use ark_invest_api_rust_data::util::ticker::Ticker;
-use ark_invest_api_rust_data::util::*;
 
 #[test]
 fn get_api_arkk() -> Result<(), Error> {

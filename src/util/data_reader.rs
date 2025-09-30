@@ -1,10 +1,13 @@
-use anyhow::{anyhow, Error};
-use polars::frame::DataFrame;
-use polars::io::SerReader;
-use polars::prelude::{CsvReader, JsonReader};
+use std::io::Cursor;
+
+use anyhow::{Error, anyhow};
+use polars::{
+    frame::DataFrame,
+    io::SerReader,
+    prelude::{CsvReader, JsonReader},
+};
 use reqwest::blocking::Client;
 use serde_json::Value;
-use std::io::Cursor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reader {
@@ -15,7 +18,10 @@ pub enum Reader {
 impl Reader {
     pub fn get_data_url(&self, url: String) -> anyhow::Result<DataFrame, Error> {
         let response = Client::builder()
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+            .user_agent(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+                 Chrome/119.0.0.0 Safari/537.36",
+            )
             .gzip(true)
             .build()?
             .get(url)

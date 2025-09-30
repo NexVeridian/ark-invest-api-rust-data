@@ -1,26 +1,21 @@
+use std::{env, str::FromStr, sync::LazyLock, thread};
+
 use anyhow::{Error, Result};
-use ark_invest_api_rust_data::{util::ticker::Ticker, *};
+use ark_invest_api_rust_data::{Ark, Source, util::ticker::Ticker};
 use clokwerk::{AsyncScheduler, Job, TimeUnits};
 use futures::future::join_all;
-use lazy_static::lazy_static;
 use polars::prelude::DataFrame;
 use rand::Rng;
-use std::env;
-use std::str::FromStr;
-use std::thread;
 use strum::IntoEnumIterator;
-use tokio::task;
-use tokio::time::Duration;
+use tokio::{task, time::Duration};
 
-lazy_static! {
-    static ref SOURCE: Source = match env::var("ARK_SOURCE") {
-        Ok(val) =>
-            Source::from_str(val.as_str()).expect("Env string ARK_SOURCE is not in enum Source"),
-        Err(_) => Source::ApiIncremental,
-    };
-}
+static SOURCE: LazyLock<Source> = LazyLock::new(|| {
+    env::var("ARK_SOURCE").map_or(Source::ApiIncremental, |val| {
+        Source::from_str(&val).expect("Env string ARK_SOURCE is not in enum Source")
+    })
+});
 
-fn print_df(ticker: &Ticker, df: &DataFrame) {
+fn print_df(ticker: Ticker, df: &DataFrame) {
     println!(
         "Ticker: {:#?}\nShape: {:?}\n{:#?}",
         ticker,
@@ -40,7 +35,7 @@ fn csv_merge() -> Result<(), Error> {
             .sort()?
             .write_parquet()?
             .collect()?;
-        print_df(&ticker, &df);
+        print_df(ticker, &df);
     }
     Ok(())
 }
@@ -56,7 +51,7 @@ fn ark_plan(ticker: Ticker) -> Result<(), Error> {
         .write_parquet()?
         .collect()?;
 
-    print_df(&ticker, &df);
+    print_df(ticker, &df);
     Ok(())
 }
 

@@ -1,6 +1,8 @@
 use anyhow::Error;
-use polars::frame::DataFrame;
-use polars::prelude::{IntoLazy, LazyFrame};
+use polars::{
+    frame::DataFrame,
+    prelude::{IntoLazy, LazyFrame},
+};
 
 #[derive(Clone)]
 pub enum DF {
@@ -43,7 +45,7 @@ pub trait DFS {
 
 impl DFS for Vec<DF> {
     fn lazy(self) -> Vec<LazyFrame> {
-        self.into_iter().map(|df| df.lazy()).collect()
+        self.into_iter().map(DF::lazy).collect()
     }
     fn collect(self) -> Vec<DataFrame> {
         self.into_iter().map(|df| df.collect().unwrap()).collect()

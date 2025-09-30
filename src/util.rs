@@ -1,15 +1,15 @@
-use anyhow::{anyhow, Error, Result};
+use std::{
+    fs::{File, create_dir_all},
+    path::Path,
+};
+
+use anyhow::{Error, Result, anyhow};
 use chrono::{Duration, NaiveDate};
 use data_reader::Reader;
 use df::{DF, DFS};
 use glob::glob;
-use polars::datatypes::DataType;
-use polars::lazy::dsl::StrptimeOptions;
-use polars::prelude::*;
-use std::fs::{create_dir_all, File};
-use std::path::Path;
+use polars::{datatypes::DataType, lazy::dsl::StrptimeOptions, prelude::*};
 use strum_macros::EnumString;
-
 use ticker::{DataSource, Ticker};
 pub mod data_reader;
 pub mod df;
@@ -41,12 +41,13 @@ pub struct Ark {
 }
 impl Ark {
     pub fn new(source: Source, ticker: Ticker, path: Option<String>) -> Result<Self, Error> {
-        let existing_file = Self::read_parquet(&ticker, path.as_ref()).is_ok();
+        let existing_file = Self::read_parquet(ticker, path.as_ref()).is_ok();
 
         let mut ark = Self {
-            df: match existing_file {
-                true => Self::read_parquet(&ticker, path.as_ref())?,
-                false => DF::DataFrame(Box::new(df!["date" => [""],]?)),
+            df: if existing_file {
+                Self::read_parquet(ticker, path.as_ref())?
+            } else {
+                DF::DataFrame(Box::new(df!["date" => [""],]?))
             },
             ticker,
             path,
@@ -58,7 +59,7 @@ impl Ark {
             }
             (Source::Read, true) => None,
             (Source::Ark, _) => Some(ark.get_csv_ark()?),
-            (Source::ApiIncremental, true) | (Source::ArkFundsIoIncremental, true) => {
+            (Source::ApiIncremental | Source::ArkFundsIoIncremental, true) => {
                 let last_day = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
                     + Duration::days(ark.df.clone().collect()?.column("date")?.max().unwrap());
                 Some(ark.get_api(Some(last_day), Some(&source))?)
@@ -87,32 +88,31 @@ impl Ark {
     pub fn write_parquet(self) -> Result<Self, Error> {
         // with format df
         let ark = self.format()?;
-        Self::write_df_parquet(
-            match &ark.path {
-                Some(path) => format!("{}/{}.parquet", path, ark.ticker),
-                None => format!("data/parquet/{}.parquet", ark.ticker),
-            },
-            ark.df.clone(),
-        )?;
+        let path_str = if let Some(ref path) = ark.path {
+            format!("{}/{}.parquet", path, ark.ticker)
+        } else {
+            format!("data/parquet/{}.parquet", ark.ticker)
+        };
+        Self::write_df_parquet(&path_str, ark.df.clone())?;
         Ok(ark)
     }
 
-    fn write_df_parquet(path: String, df: DF) -> Result<(), Error> {
-        if let Some(parent) = Path::new(&path).parent() {
-            if !parent.exists() {
-                create_dir_all(parent)?;
-            }
+    fn write_df_parquet(path: &str, df: DF) -> Result<(), Error> {
+        if let Some(parent) = Path::new(&path).parent()
+            && !parent.exists()
+        {
+            create_dir_all(parent)?;
         }
-        ParquetWriter::new(File::create(&path)?).finish(&mut df.collect()?)?;
+        ParquetWriter::new(File::create(path)?).finish(&mut df.collect()?)?;
         Ok(())
     }
 
-    fn read_parquet(ticker: &Ticker, path: Option<&String>) -> Result<DF, Error> {
+    fn read_parquet(ticker: Ticker, path: Option<&String>) -> Result<DF, Error> {
         let df = LazyFrame::scan_parquet(
-            match path {
-                Some(p) => format!("{p}/{ticker}.parquet"),
-                None => format!("data/parquet/{ticker}.parquet"),
-            },
+            path.map_or_else(
+                || format!("data/parquet/{ticker}.parquet"),
+                |p| format!("{p}/{ticker}.parquet"),
+            ),
             ScanArgsParquet::default(),
         )?;
         Ok(df.into())
@@ -132,7 +132,7 @@ impl Ark {
 
     fn concat_df(dfs: Vec<DF>) -> Result<DF, Error> {
         // with dedupe
-        let df = concat(dfs.lazy(), Default::default())?;
+        let df = concat(dfs.lazy(), UnionArgs::default())?;
         Self::dedupe(df.into())
     }
 
@@ -152,17 +152,14 @@ impl Ark {
 
     pub fn df_format(df: DF, data_source: Option<DataSource>) -> Result<DF, Error> {
         let mut df = df.collect()?;
-        match data_source {
-            Some(ds) => {
-                df = format::data_source(ds, df.into())?.collect()?;
-            }
-            None => {
-                df = format::df_format_europe_csv(df.into())?.collect()?;
-                df = format::df_format_europe_arkfundsio(df.into())?.collect()?;
-                df = format::df_format_21shares(df.into())?.collect()?;
-                df = format::df_format_arkvx(df.into())?.collect()?;
-                df = format::df_format_europe(df.into())?.collect()?;
-            }
+        if let Some(ds) = data_source {
+            df = format::data_source(ds, df.into())?.collect()?;
+        } else {
+            df = format::df_format_europe_csv(df.into())?.collect()?;
+            df = format::df_format_europe_arkfundsio(df.into())?.collect()?;
+            df = format::df_format_21shares(df.into())?.collect()?;
+            df = format::df_format_arkvx(df.into())?.collect()?;
+            df = format::df_format_europe(df.into())?.collect()?;
         }
 
         if df.get_column_names().contains(&"market_value_($)") {
@@ -229,11 +226,11 @@ impl Ark {
                 };
 
             if let Ok(x) = date_format(df.clone(), Some("%m/%d/%Y".into())) {
-                df = x
+                df = x;
             } else if let Ok(x) = date_format(df.clone(), Some("%Y/%m/%d".into())) {
-                df = x
+                df = x;
             } else if let Ok(x) = date_format(df.clone(), None) {
-                df = x
+                df = x;
             }
         }
 
@@ -446,7 +443,7 @@ impl Ark {
                     .cast(DataType::Float64)
                     .round(2),
                 )
-                .collect()?
+                .collect()?;
         }
 
         let mut expressions: Vec<Expr> = vec![];
@@ -517,15 +514,11 @@ impl Ark {
                 "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
                 self.ticker, last_day
             ),
-            (_, None, Some(Source::ArkFundsIoIncremental)) => format!(
+            (_, None, Some(Source::ArkFundsIoIncremental))
+            | (_, _, Some(Source::ArkFundsIoFull)) => format!(
                 "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
                 self.ticker, default_start_day
             ),
-            (_, _, Some(Source::ArkFundsIoFull)) => format!(
-                "https://arkfunds.io/api/v2/etf/holdings?symbol={}&date_from={}",
-                self.ticker, default_start_day
-            ),
-
             // api.nexveridian.com
             (_, Some(last_day), _) => format!(
                 "https://api.nexveridian.com/ark_holdings?ticker={}&start={}",
@@ -539,7 +532,7 @@ impl Ark {
 
         let mut df = Reader::Json.get_data_url(url)?;
         df = match source {
-            Some(Source::ArkFundsIoIncremental) | Some(Source::ArkFundsIoFull) => df
+            Some(Source::ArkFundsIoIncremental | Source::ArkFundsIoFull) => df
                 .column("holdings")?
                 .clone()
                 .explode()?
@@ -562,10 +555,10 @@ impl Ark {
             dfs.push(LazyCsvReader::new(x).finish()?);
         }
 
-        let mut df = concat(dfs, Default::default())?.into();
+        let mut df = concat(dfs, UnionArgs::default())?.into();
 
-        if Self::read_parquet(&ticker, path.as_ref()).is_ok() {
-            let df_old = Self::read_parquet(&ticker, path.as_ref())?;
+        if Self::read_parquet(ticker, path.as_ref()).is_ok() {
+            let df_old = Self::read_parquet(ticker, path.as_ref())?;
             df = Self::concat_df(vec![
                 Self::df_format(df_old, None)?,
                 Self::df_format(df, None)?,
@@ -578,16 +571,18 @@ impl Ark {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use pretty_assertions::assert_eq;
+
     use super::*;
     use crate::test_utils::*;
-    use pretty_assertions::assert_eq;
-    use std::fs;
 
     #[test]
     fn read_write_parquet() -> Result<(), Error> {
         let test_df = defualt_df(&[Some("COIN")], &[Some("COINBASE")])?;
 
-        Ark::write_df_parquet("data/test/ARKK.parquet".into(), test_df.clone().into())?;
+        Ark::write_df_parquet("data/test/ARKK.parquet", test_df.clone().into())?;
         let read = Ark::new(Source::Read, Ticker::ARKK, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKK.parquet")?;
 
@@ -606,7 +601,7 @@ mod tests {
             ],
         )?;
 
-        Ark::write_df_parquet("data/test/ARKW.parquet".into(), test_df.into())?;
+        Ark::write_df_parquet("data/test/ARKW.parquet", test_df.into())?;
         let read = Ark::new(Source::Read, Ticker::ARKW, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKW.parquet")?;
 
@@ -632,7 +627,7 @@ mod tests {
                 Some("ARKB"),
             ],
         )?;
-        Ark::write_df_parquet("data/test/ARKF.parquet".into(), test_df.into())?;
+        Ark::write_df_parquet("data/test/ARKF.parquet", test_df.into())?;
         let read = Ark::new(Source::Read, Ticker::ARKF, Some("data/test".to_owned()))?.collect()?;
         fs::remove_file("data/test/ARKF.parquet")?;
 
