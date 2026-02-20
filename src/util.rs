@@ -177,10 +177,13 @@ impl Ark {
         if df.get_column_names().contains(&"market value ($)") {
             df = df
                 .lazy()
-                .rename(
-                    vec!["market value ($)", "weight (%)"],
-                    vec!["market_value", "weight"],
-                )
+                .rename(vec!["market value ($)"], vec!["market_value"])
+                .collect()?;
+        }
+        if df.get_column_names().contains(&"weight (%)") {
+            df = df
+                .lazy()
+                .rename(vec!["weight (%)"], vec!["weight"])
                 .collect()?;
         }
         if df.get_column_names().contains(&"weight ($)") {

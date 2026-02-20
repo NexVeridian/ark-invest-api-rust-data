@@ -34,6 +34,31 @@ fn get_api_arkk() -> Result<(), Error> {
 }
 
 #[test]
+fn get_api_arkf() -> Result<(), Error> {
+    let df = Ark::new(Source::Ark, Ticker::ARKF, Some("data/test".to_owned()))?
+        .get_api(NaiveDate::from_ymd_opt(2023, 5, 18), None)?;
+
+    let expected = [
+        "company",
+        "cusip",
+        "date",
+        "market_value",
+        "share_price",
+        "shares",
+        "ticker",
+        "weight",
+        "weight_rank",
+    ];
+    let actual = df.get_column_names();
+
+    assert!(
+        actual == expected || actual == expected[..expected.len() - 1],
+        "Column names are wrong"
+    );
+    Ok(())
+}
+
+#[test]
 fn get_api_format_arkk() -> Result<(), Error> {
     let dfl = Ark::new(
         Source::ApiIncremental,

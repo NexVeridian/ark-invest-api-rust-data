@@ -66,14 +66,9 @@ pub fn df_format_arkvx(df: DF) -> Result<DF, Error> {
             .rename(vec!["CUSIP", "weight (%)"], vec!["cusip", "weight"])
             .collect()?;
     }
-    if df.get_column_names().contains(&"weight (%)") {
-        df = df
-            .lazy()
-            .rename(vec!["weight (%)"], vec!["weight"])
-            .collect()?;
-    }
 
-    if !df.get_column_names().contains(&"market_value") {
+    let cols = df.get_column_names();
+    if !cols.contains(&"market value ($)") && !cols.contains(&"market_value") {
         df = df
             .lazy()
             .with_columns([

@@ -82,18 +82,12 @@ async fn main() {
     let mut scheduler = AsyncScheduler::new();
     println!("Scheduler Started");
 
-    if env::var("STARTUP_CSV_MERGE")
-        .map(|v| v == "true")
-        .unwrap_or(false)
-    {
+    if env::var("STARTUP_CSV_MERGE").is_ok_and(|v| v == "true") {
         println!("Merging CSVs to Parquet");
         csv_merge().unwrap();
     }
 
-    if env::var("STARTUP_ARK_ETF")
-        .map(|v| v == "true")
-        .unwrap_or(false)
-    {
+    if env::var("STARTUP_ARK_ETF").is_ok_and(|v| v == "true") {
         ark_etf().await;
     }
 
