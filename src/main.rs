@@ -46,19 +46,27 @@ fn ark_plan(ticker: Ticker) -> Result<(), Error> {
     // sleep(sec).await;
     thread::sleep(sec);
 
-    let df = Ark::new(*SOURCE, ticker, None)?
-        .format()?
-        .write_parquet()?
-        .collect()?;
+    let df = Ark::new(*SOURCE, ticker, None)
+        .map_err(|e| anyhow::anyhow!("Failed to create Ark instance for {ticker}: {e}"))?
+        .format()
+        .map_err(|e| anyhow::anyhow!("Failed to format data for {ticker}: {e}"))?
+        .write_parquet()
+        .map_err(|e| anyhow::anyhow!("Failed to write parquet for {ticker}: {e}"))?
+        .collect()
+        .map_err(|e| anyhow::anyhow!("Failed to collect data for {ticker}: {e}"))?;
 
     print_df(ticker, &df);
     Ok(())
 }
 
 async fn spawn_ark_plan(ticker: Ticker) -> Result<(), Error> {
-    task::spawn_blocking(move || ark_plan(ticker).unwrap())
-        .await
-        .unwrap();
+    task::spawn_blocking(move || {
+        if let Err(e) = ark_plan(ticker) {
+            eprintln!("Error processing ticker {ticker:?}: {e:?}");
+        }
+    })
+    .await
+    .unwrap();
     Ok(())
 }
 
@@ -78,13 +86,13 @@ async fn ark_etf() {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error> {
     let mut scheduler = AsyncScheduler::new();
     println!("Scheduler Started");
 
     if env::var("STARTUP_CSV_MERGE").is_ok_and(|v| v == "true") {
         println!("Merging CSVs to Parquet");
-        csv_merge().unwrap();
+        csv_merge().map_err(|e| anyhow::anyhow!("Failed CSV merge: {e}"))?;
     }
 
     if env::var("STARTUP_ARK_ETF").is_ok_and(|v| v == "true") {
