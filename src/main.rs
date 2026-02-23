@@ -78,6 +78,18 @@ async fn ark_etf() {
                 && x != Ticker::ARKD
                 && x != Ticker::ARKY
                 && x != Ticker::ARKZ
+                && x != Ticker::ARKB
+                && x != Ticker::PRNT
+                && x != Ticker::EUROPE_ARKI
+                && x != Ticker::EUROPE_ARKG
+                && x != Ticker::EUROPE_ARKK
+                && x != Ticker::CYBR
+                && x != Ticker::CYCL
+                && x != Ticker::FOOD
+                && x != Ticker::LIFE
+                && x != Ticker::LUSA
+                && x != Ticker::NFRA
+                && x != Ticker::PMNT
         })
         .map(spawn_ark_plan)
         .collect::<Vec<_>>();
