@@ -51,12 +51,12 @@ impl Ticker {
         match *self {
             Self::ARKVX => "ARK_VENTURE_FUND_ARKVX_HOLDINGS.csv",
 
-            Self::ARKF => "FINTECH_INNOVATION",
+            Self::ARKF => "ARK_BLOCKCHAIN_&_FINTECH_INNOVATION",
             Self::ARKG => "GENOMIC_REVOLUTION",
             Self::ARKK => "INNOVATION",
             Self::ARKQ => "AUTONOMOUS_TECH._&_ROBOTICS",
             Self::ARKW => "NEXT_GENERATION_INTERNET",
-            Self::ARKX => "SPACE_EXPLORATION_&_INNOVATION",
+            Self::ARKX => "ARK_SPACE_&_DEFENSE_INNOVATION",
 
             Self::ARKA => "ARKA",
             Self::ARKZ => "ARKZ",
